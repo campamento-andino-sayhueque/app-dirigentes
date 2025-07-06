@@ -1,5 +1,6 @@
-package com.cas.login.config;
+package com.cas.login.config.security;
 
+import com.cas.login.config.CookieLoggingFilter;
 import com.cas.login.service.UserDetailsServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
