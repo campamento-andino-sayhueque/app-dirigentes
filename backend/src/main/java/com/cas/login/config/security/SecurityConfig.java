@@ -50,7 +50,9 @@ public class SecurityConfig {
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
-    }    @Bean
+    }   
+    
+    @Bean
     @Order(1) // API specific configuration
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -63,7 +65,9 @@ public class SecurityConfig {
             );
 
         return http.build();
-    }    @Bean
+    }   
+    
+    @Bean
     @Order(2) // Form login configuration for other paths
     public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws Exception {
         // Initialize security handlers
