@@ -60,24 +60,25 @@ public class SecurityConfig {
             securityHandlers = new SecurityHandlers(objectMapper);
         }
 
+
+        JsonUsernamePasswordAuthenticationFilter jsonAuthFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
+        jsonAuthFilter.setAuthenticationManager(http.getSharedObject(org.springframework.security.authentication.AuthenticationManager.class));
+        jsonAuthFilter.setFilterProcessesUrl("/api/login");
+        jsonAuthFilter.setAuthenticationSuccessHandler(securityHandlers.createSuccessHandler());
+        jsonAuthFilter.setAuthenticationFailureHandler(securityHandlers.createFailureHandler());
+
         http
-            .securityMatcher("/api/**") // Aplica solo a /api/**
+            .securityMatcher("/api/**")
             .authorizeHttpRequests(SecurityEndpoints::configureApiEndpoints)
-            .formLogin(formLogin ->
-                formLogin
-                    .loginProcessingUrl("/api/login") // Login bajo /api/login
-                    .successHandler(securityHandlers.createSuccessHandler())
-                    .failureHandler(securityHandlers.createFailureHandler())
-                    .permitAll()
-            )
+            .addFilterAt(jsonAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .logout(logout ->
                 logout
                     .logoutUrl("/api/logout")
                     .logoutSuccessHandler(SecurityHandlers::handleLogoutSuccess)
                     .permitAll()
             )
-            .httpBasic(customizer -> {}) // Permite HTTP Basic para compatibilidad
-            .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs stateless
+            .httpBasic(customizer -> {})
+            .csrf(csrf -> csrf.disable())
             .addFilterAfter(new CookieLoggingFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(eh -> eh
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
@@ -86,5 +87,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    // Eliminado formLoginFilterChain: toda la autenticación y login se maneja bajo /api/**
+}
