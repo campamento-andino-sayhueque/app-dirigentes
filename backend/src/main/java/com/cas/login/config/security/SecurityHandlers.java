@@ -30,47 +30,7 @@ public class SecurityHandlers {
      * 
      * @return AuthenticationSuccessHandler configurado
      */
-    public AuthenticationSuccessHandler createSuccessHandler() {
-        return (request, response, authentication) -> {
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            Map<String, Object> data = new HashMap<>();
-            data.put("username", userDetails.getUsername());
-            
-            List<String> roleNames = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-            data.put("roles", roleNames);
-            data.put("success", true);
-            data.put("message", "Authentication successful");
-
-            response.getWriter().write(objectMapper.writeValueAsString(data));
-            response.getWriter().flush();
-        };
-    }
-    
-    /**
-     * Crea un manejador para autenticación fallida.
-     * Devuelve información del error en formato JSON.
-     * 
-     * @return AuthenticationFailureHandler configurado
-     */
-    public AuthenticationFailureHandler createFailureHandler() {
-        return (request, response, exception) -> {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("success", false);
-            data.put("error", "Authentication failed");
-            data.put("message", exception.getMessage());
-
-            response.getWriter().write(objectMapper.writeValueAsString(data));
-            response.getWriter().flush();
-        };
-    }
+    // Métodos de handlers eliminados para dejar el login pelado
     
     /**
      * Crea un manejador para logout exitoso.

@@ -24,7 +24,7 @@ public class SecurityEndpoints {
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth
             // Endpoints públicos - accesibles sin autenticación
-            .requestMatchers("/api/status", "/api/health", "/api/login", "/api/logout", "/error").permitAll()
+            .requestMatchers("/api/status", "/api/health", "/api/logout", "/error").permitAll()
 
             // Endpoints de acampantes - requieren rol DIRIGENTE o ADMIN
             .requestMatchers("/api/acampantes/**").hasAnyRole(SecurityRoles.DIRIGENTE, SecurityRoles.ADMIN)

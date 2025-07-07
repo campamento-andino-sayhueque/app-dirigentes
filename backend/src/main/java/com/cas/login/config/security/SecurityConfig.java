@@ -61,30 +61,15 @@ public class SecurityConfig {
         }
 
 
-        JsonUsernamePasswordAuthenticationFilter jsonAuthFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
-        jsonAuthFilter.setAuthenticationManager(http.getSharedObject(org.springframework.security.authentication.AuthenticationManager.class));
-        jsonAuthFilter.setFilterProcessesUrl("/api/login");
-        jsonAuthFilter.setAuthenticationSuccessHandler(securityHandlers.createSuccessHandler());
-        jsonAuthFilter.setAuthenticationFailureHandler(securityHandlers.createFailureHandler());
-
         http
             .securityMatcher("/api/**")
             .authorizeHttpRequests(SecurityEndpoints::configureApiEndpoints)
-            .addFilterAt(jsonAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
-            .logout(logout ->
-                logout
-                    .logoutUrl("/api/logout")
-                    .logoutSuccessHandler(SecurityHandlers::handleLogoutSuccess)
-                    .permitAll()
-            )
             .httpBasic(customizer -> {})
             .csrf(csrf -> csrf.disable())
-            .addFilterAfter(new CookieLoggingFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(eh -> eh
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .authenticationProvider(authenticationProvider());
-
         return http.build();
     }
 }
