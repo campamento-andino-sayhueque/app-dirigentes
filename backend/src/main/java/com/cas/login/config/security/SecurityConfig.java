@@ -53,35 +53,21 @@ public class SecurityConfig {
     }   
     
     @Bean
-    @Order(1) // API specific configuration
+    @Order(1) // API specific configuration (incluye login)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher("/api/**") // Apply this filter chain only to /api/** paths
-            .authorizeHttpRequests(SecurityEndpoints::configureApiEndpoints)
-            .httpBasic(customizer -> {}) // Enable HTTP Basic for APIs
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless APIs
-            .exceptionHandling(eh -> eh
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)) // Return 401 for unauthenticated
-            );
-
-        return http.build();
-    }   
-    
-    @Bean
-    @Order(2) // Form login configuration for other paths
-    public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws Exception {
         // Initialize security handlers
         if (securityHandlers == null) {
             securityHandlers = new SecurityHandlers(objectMapper);
         }
-        
+
         http
-            .authorizeHttpRequests(SecurityEndpoints::configureFormEndpoints)
+            .securityMatcher("/api/**") // Aplica solo a /api/**
+            .authorizeHttpRequests(SecurityEndpoints::configureApiEndpoints)
             .formLogin(formLogin ->
                 formLogin
-                    .loginProcessingUrl("/perform_login") // API login endpoint
-                    .successHandler(securityHandlers.createSuccessHandler()) // Custom success handler
-                    .failureHandler(securityHandlers.createFailureHandler()) // Custom failure handler
+                    .loginProcessingUrl("/api/login") // Login bajo /api/login
+                    .successHandler(securityHandlers.createSuccessHandler())
+                    .failureHandler(securityHandlers.createFailureHandler())
                     .permitAll()
             )
             .logout(logout ->
@@ -90,10 +76,15 @@ public class SecurityConfig {
                     .logoutSuccessHandler(SecurityHandlers::handleLogoutSuccess)
                     .permitAll()
             )
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for API
-            // Add the CookieLoggingFilter after CsrfFilter
+            .httpBasic(customizer -> {}) // Permite HTTP Basic para compatibilidad
+            .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs stateless
             .addFilterAfter(new CookieLoggingFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(eh -> eh
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            )
             .authenticationProvider(authenticationProvider());
 
         return http.build();
-    }}
+    }
+
+    // Eliminado formLoginFilterChain: toda la autenticación y login se maneja bajo /api/**

@@ -21,29 +21,29 @@ public class SecurityEndpoints {
      * @param auth el configurador de autorización de Spring Security
      */
     public static void configureApiEndpoints(
-            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {        auth
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth
             // Endpoints públicos - accesibles sin autenticación
-            .requestMatchers("/api/status", "/api/health").permitAll()
-            
+            .requestMatchers("/api/status", "/api/health", "/api/login", "/api/logout", "/error").permitAll()
+
             // Endpoints de acampantes - requieren rol DIRIGENTE o ADMIN
             .requestMatchers("/api/acampantes/**").hasAnyRole(SecurityRoles.DIRIGENTE, SecurityRoles.ADMIN)
-            
+
             // Endpoints de asistencias - requieren rol DIRIGENTE o ADMIN
             .requestMatchers("/api/asistencias/**").hasAnyRole(SecurityRoles.DIRIGENTE, SecurityRoles.ADMIN)
-            
+
             // Endpoints de dirigentes - solo para ADMIN
             .requestMatchers("/api/dirigentes/**").hasRole(SecurityRoles.ADMIN)
-            
+
             // Endpoints de packing-list - requieren rol DIRIGENTE o ADMIN
             .requestMatchers("/api/packing-list/**").hasAnyRole(SecurityRoles.DIRIGENTE, SecurityRoles.ADMIN)
-            
+
             // Endpoints administrativos - solo para ADMIN
             .requestMatchers("/api/admin/**").hasRole(SecurityRoles.ADMIN)
-            
+
             // Endpoints de usuario autenticado
             .requestMatchers("/api/user/me").authenticated()
-            .requestMatchers("/api/logout").authenticated()
-            
+
             // Cualquier otra petición a la API requiere autenticación
             .anyRequest().authenticated();
     }
@@ -57,12 +57,8 @@ public class SecurityEndpoints {
     public static void configureFormEndpoints(
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth
-            // Endpoints públicos para autenticación y errores
-            .requestMatchers("/perform_login", "/error").permitAll()
-            
-            // Acceso público a la raíz (para status de la API)
-            .requestMatchers("/").permitAll()
-            
+            // Endpoints públicos para errores y raíz
+            .requestMatchers("/", "/error").permitAll()
             // Cualquier otra petición requiere autenticación
             .anyRequest().authenticated();
     }
