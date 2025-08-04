@@ -1,5 +1,10 @@
 {
   "projects": {
-    "default": "cas-web-465521"
-  }
+    "default": "authzen-gma61",
+    "dev": "authzen-gma61",
+    "qa": "sample-firebase-ai-app-55ff6",
+    "prod": "cas-web-465521"
+  },
+  "targets": {},
+  "etags": {}
 }
