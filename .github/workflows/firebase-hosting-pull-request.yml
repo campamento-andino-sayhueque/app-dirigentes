@@ -1,4 +1,4 @@
-# Este archivo ahora crea previsualizaciones en el proyecto correcto
+# Este archivo crea previsualizaciones usando variables de environment
 # según la rama de destino del PR (main, dev, o qa).
 
 name: Deploy to Firebase Hosting on PR
@@ -11,40 +11,135 @@ permissions:
   pull-requests: write
 
 jobs:
-  build_and_preview:
-    # Esta condición de seguridad es buena, la mantenemos
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  # Preview para PRs hacia main (usa environment production)
+  preview-production:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.base_ref == 'main'  
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci && npm run build
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for Production Preview
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=production
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
 
-      # --- Lógica de Previsualización por Entorno ---
-
-      # Despliega un PREVIEW en el proyecto de PRODUCCIÓN
-      # si el Pull Request apunta a la rama 'main'
       - name: Deploy Preview to Production Environment
-        if: github.base_ref == 'main'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}
           projectId: cas-web-465521
 
-      # Despliega un PREVIEW en el proyecto de DESARROLLO
-      # si el Pull Request apunta a la rama 'dev'
+  # Preview para PRs hacia dev (usa environment development)
+  preview-development:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.base_ref == 'dev'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for Development Preview
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=development
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
+
       - name: Deploy Preview to Development Environment
-        if: github.base_ref == 'dev'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}
           projectId: authzen-gma61
 
-      # Despliega un PREVIEW en el proyecto de QA
-      # si el Pull Request apunta a la rama 'qa'
+  # Preview para PRs hacia qa (usa environment qa)
+  preview-qa:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.base_ref == 'qa'
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for QA Preview
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=qa
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
+
       - name: Deploy Preview to QA Environment
-        if: github.base_ref == 'qa'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

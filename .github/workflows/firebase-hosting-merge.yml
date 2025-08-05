@@ -9,40 +9,140 @@ on:
       - dev
       - qa
 jobs:
-  build_and_deploy:
+  # Job para Production
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for Production
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=production
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
 
-      # --- Despliegue a PRODUCCIÓN ---
-      # Este paso solo se ejecuta si la rama es 'main'
       - name: Deploy to Production
-        if: github.ref == 'refs/heads/main'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}' # El mismo secret funciona
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
           channelId: live
-          projectId: cas-web-465521 # O el ID de tu proyecto de producción
+          projectId: cas-web-465521
 
-      # --- Despliegue a DESARROLLO ---
-      # Este paso solo se ejecuta si la rama es 'develop'
+  # Job para Development
+  deploy-development:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for Development
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=development
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
+
       - name: Deploy to Development
-        if: github.ref == 'refs/heads/dev'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}' # El mismo secret funciona
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
           channelId: live
-          projectId: authzen-gma61 # O el ID de tu proyecto de desarrollo
+          projectId: authzen-gma61
 
-      # --- Despliegue a QA ---
-      # Este paso solo se ejecuta si la rama es 'qa'
+  # Job para QA
+  deploy-qa:
+    if: github.ref == 'refs/heads/qa'
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cas/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd cas
+          npm ci
+          
+      - name: Create .env.local for QA
+        run: |
+          cd cas
+          cat > .env.local << EOL
+          NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.FIREBASE_APP_ID }}
+          NEXT_PUBLIC_ENVIRONMENT=qa
+          EOL
+          
+      - name: Build Application
+        run: |
+          cd cas
+          npm run build
+
       - name: Deploy to QA
-        if: github.ref == 'refs/heads/qa'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}' # El mismo secret funciona
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
           channelId: live
-          projectId: sample-firebase-ai-app-55ff6 # Reemplaza con el ID de tu proyecto de QA
+          projectId: sample-firebase-ai-app-55ff6
