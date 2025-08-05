@@ -1,4 +1,5 @@
 import LoginButton from "@/components/LoginButton";
+import SeedDataButton from "@/components/SeedDataButton";
 
 export default function Home() {
   return (
@@ -15,8 +16,9 @@ export default function Home() {
           </p>
         </header>
         
-        <main className="max-w-md mx-auto">
+        <main className="max-w-md mx-auto space-y-6">
           <LoginButton />
+          <SeedDataButton />
         </main>
         
         <footer className="text-center mt-12">
