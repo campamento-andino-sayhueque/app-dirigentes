@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para usuarios autenticados
+    match /users/{userId} {
+      // Los usuarios solo pueden leer y escribir sus propios datos
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para documentos públicos (solo lectura para usuarios autenticados)
+    match /public/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasRole('admin');
+    }
+    
+    // Reglas para posts/contenido del usuario
+    match /posts/{postId} {
+      // Cualquier usuario autenticado puede leer
+      allow read: if request.auth != null;
+      // Solo el autor puede crear, actualizar o eliminar
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.authorId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+    }
+    
+    // Reglas para comentarios
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isValidComment();
+      allow update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.authorId || hasRole('moderator'));
+    }
+    
+    // Funciones auxiliares
+    function hasRole(role) {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isValidComment() {
+      return request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']) &&
+        request.resource.data.authorId == request.auth.uid;
+    }
+    
+    // Regla por defecto: denegar acceso no especificado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
