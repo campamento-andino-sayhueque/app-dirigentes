@@ -3,7 +3,22 @@ logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+yarn-error# dotenv environment variables file
+.env
+.env.local
+.env.production
+.env.development
+
+# Next.js build output - CONTIENE SECRETS NO DEBE COMMITEARSE
+public/_next/
+public/index.html
+public/404.html
+public/*.txt
+frontend/.next/
+frontend/out/
+
+# dataconnected generated files
+.dataconnect
 firebase-debug.log*
 firebase-debug.*.log*
 
