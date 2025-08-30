@@ -10,6 +10,10 @@
     "firebase:emulators": "firebase emulators:start",
     "firebase:emulators:import": "firebase emulators:start --import=./firebase-data",
     "firebase:emulators:export": "firebase emulators:export ./firebase-data",
+    "firebase:dev": "npm run firebase:rules:dev && firebase emulators:start",
+    "firebase:rules:dev": "copy /Y ..\\firestore.rules.dev ..\\firestore.rules && echo ✅ Reglas de DESARROLLO activadas",
+    "firebase:rules:prod": "copy /Y ..\\firestore.rules.prod ..\\firestore.rules && echo ✅ Reglas de PRODUCCIÓN activadas",
+    "firebase:rules:status": "powershell -Command \"Write-Host 'Estado actual de las reglas:' -ForegroundColor Yellow; Get-Content ..\\firestore.rules | Select-Object -First 5 | Where-Object {$_ -match 'REGLAS|reglas|allow.*true'} | ForEach-Object {Write-Host $_ -ForegroundColor Green}\"",
     "dev:firebase": "concurrently \"npm run firebase:emulators\" \"npm run dev\""
   },
   "dependencies": {
