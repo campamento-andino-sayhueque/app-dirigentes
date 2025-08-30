@@ -11,9 +11,9 @@
     "firebase:emulators:import": "firebase emulators:start --import=./firebase-data",
     "firebase:emulators:export": "firebase emulators:export ./firebase-data",
     "firebase:dev": "npm run firebase:rules:dev && firebase emulators:start",
-    "firebase:rules:dev": "copy /Y ..\\firestore.rules.dev ..\\firestore.rules && echo ✅ Reglas de DESARROLLO activadas",
-    "firebase:rules:prod": "copy /Y ..\\firestore.rules.prod ..\\firestore.rules && echo ✅ Reglas de PRODUCCIÓN activadas",
-    "firebase:rules:status": "powershell -Command \"Write-Host 'Estado actual de las reglas:' -ForegroundColor Yellow; Get-Content ..\\firestore.rules | Select-Object -First 5 | Where-Object {$_ -match 'REGLAS|reglas|allow.*true'} | ForEach-Object {Write-Host $_ -ForegroundColor Green}\"",
+    "firebase:rules:dev": "shx cp ../firestore.rules.dev ../firestore.rules && echo ✅ Reglas de DESARROLLO activadas",
+    "firebase:rules:prod": "shx cp ../firestore.rules.prod ../firestore.rules && echo ✅ Reglas de PRODUCCIÓN activadas",
+    "firebase:rules:status": "echo 'Estado actual de las reglas:' && head -n 5 ../firestore.rules | grep -E 'REGLAS|reglas|allow.*true'",
     "dev:firebase": "concurrently \"npm run firebase:emulators\" \"npm run dev\""
   },
   "dependencies": {
@@ -31,6 +31,7 @@
     "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
+    "shx": "^0.3.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
