@@ -47,14 +47,16 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Deploy to Production
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
-          channelId: live
-          projectId: cas-web-465521
-          site: casayhueque
+      - name: Deploy to Production (firebase-tools)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}
+        run: |
+          cd frontend
+          # write service account to a temp file and use Application Default Credentials
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > /tmp/sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          # deploy explicitly to the hosting site
+          npx firebase-tools@latest deploy --only hosting:casayhueque --project cas-web-465521 --non-interactive
 
   # Job para Development
   deploy-development:
