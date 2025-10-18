@@ -11,10 +11,20 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 /**
  * Tipos de respuesta del API
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+/**
+ * Tipos específicos para endpoints
+ */
+export interface HealthResponse {
+  status: string;
+  timestamp: string;
+  message: string;
+  service: string;
 }
 
 /**
@@ -55,9 +65,9 @@ class ApiClient {
       const token = await this.getAuthToken();
 
       // Configurar headers
-      const headers: HeadersInit = {
+      const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...options.headers,
+        ...(options.headers as Record<string, string>),
       };
 
       // Agregar token de autenticación si existe
@@ -78,7 +88,7 @@ class ApiClient {
       if (!response.ok) {
         return {
           error: data.message || "Error en la petición",
-          data: null,
+          data: undefined,
         };
       }
 
@@ -90,7 +100,7 @@ class ApiClient {
       console.error("Error en petición API:", error);
       return {
         error: error instanceof Error ? error.message : "Error desconocido",
-        data: null,
+        data: undefined,
       };
     }
   }
@@ -102,21 +112,21 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "GET" });
   }
 
-  async post<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, body: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "POST",
       body: JSON.stringify(body),
     });
   }
 
-  async put<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, body: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: JSON.stringify(body),
     });
   }
 
-  async patch<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  async patch<T>(endpoint: string, body: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       body: JSON.stringify(body),

@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { casTailwind, casColors } from "@/lib/colors";
+import type { HealthResponse } from "@/lib/api";
 
 /**
  * Componente simple para probar la conexión con el backend de Railway
  */
 export default function TestBackendSimple() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<HealthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const testBackend = async () => {
@@ -31,7 +32,7 @@ export default function TestBackendSimple() {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as HealthResponse;
       console.log("✅ Respuesta recibida:", data);
       setResult(data);
     } catch (err) {

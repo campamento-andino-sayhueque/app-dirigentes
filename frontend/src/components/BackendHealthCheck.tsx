@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, type HealthResponse } from "@/lib/api";
 import { casColors, casTailwind } from "@/lib/colors";
 
 /**
@@ -12,7 +12,7 @@ export default function BackendHealthCheck() {
   const [status, setStatus] = useState<"checking" | "connected" | "error">(
     "checking"
   );
-  const [healthData, setHealthData] = useState<any>(null);
+  const [healthData, setHealthData] = useState<HealthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const checkBackendHealth = async () => {
@@ -20,14 +20,14 @@ export default function BackendHealthCheck() {
     setError(null);
 
     try {
-      const response = await api.get("/api/health");
+      const response = await api.get<HealthResponse>("/api/health");
 
       if (response.error) {
         setStatus("error");
         setError(response.error);
       } else {
         setStatus("connected");
-        setHealthData(response.data);
+        setHealthData(response.data || null);
       }
     } catch (err) {
       setStatus("error");
