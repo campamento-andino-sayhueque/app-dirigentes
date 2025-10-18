@@ -1,7 +1,5 @@
 import LoginButton from "@/components/LoginButton";
 import SeedDataButton from "@/components/SeedDataButton";
-import BackendHealthCheck from "@/components/BackendHealthCheck";
-import TestBackendSimple from "@/components/TestBackendSimple";
 
 export default function Home() {
   return (
@@ -19,12 +17,6 @@ export default function Home() {
         </header>
 
         <main className="max-w-2xl mx-auto space-y-6">
-          {/* Prueba simple de conexión */}
-          <TestBackendSimple />
-
-          {/* Verificación de conexión con el backend */}
-          <BackendHealthCheck />
-
           <div className="max-w-md mx-auto space-y-6">
             <LoginButton />
             <SeedDataButton />
