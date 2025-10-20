@@ -100,9 +100,6 @@ export default function MobileFooter() {
               <div className="text-2xl font-bold">
                 <span className="text-[#FF6B35]">CAS</span>
               </div>
-              <div className="text-sm text-gray-600 hidden lg:block">
-                Campamento Andino Sayhueque
-              </div>
             </Link>
 
             {/* Navegación Desktop */}
@@ -157,12 +154,6 @@ export default function MobileFooter() {
           </div>
         </div>
       </nav>
-
-      {/* Spacer para desktop - evita que el contenido quede bajo el navbar */}
-      <div className="hidden md:block h-16"></div>
-
-      {/* Spacer para mobile - evita que el contenido quede bajo el footer */}
-      <div className="md:hidden h-20"></div>
     </>
   );
 }
