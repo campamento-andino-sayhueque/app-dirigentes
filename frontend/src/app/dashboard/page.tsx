@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import SeedDataButton from "@/components/SeedDataButton";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -118,11 +117,6 @@ export default function DashboardPage() {
                 <span className="text-gray-700 font-medium">20:00</span>
               </div>
             </div>
-          </div>
-
-          {/* Botón temporal para seed data */}
-          <div className="max-w-md mx-auto">
-            <SeedDataButton />
           </div>
         </main>
       </div>
