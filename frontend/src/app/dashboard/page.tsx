@@ -19,7 +19,7 @@ export default function DashboardPage() {
   // Mostrar loading mientras verifica la autenticación
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50 flex items-center justify-center">
+      <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35]"></div>
       </div>
     );
@@ -34,8 +34,8 @@ export default function DashboardPage() {
   const userName = user.displayName?.split(" ")[0] || "Usuario";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
-      <div className="container mx-auto px-4 py-8 md:pt-8">
+    <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
+      <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
             <span className="text-[#FF6B35]">Bienvenido, {userName}</span>

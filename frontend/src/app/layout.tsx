@@ -25,13 +25,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         <AuthProvider>
-          <MobileFooter />
-          {children}
+          {/* Estructura con Grid Layout - sin spacers huérfanos */}
+          <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
+            {/* Header Desktop - fila automática */}
+            <MobileFooter />
+
+            {/* Contenido principal - ocupa el espacio restante (1fr) */}
+            <main className="overflow-auto">{children}</main>
+
+            {/* Footer Mobile se maneja dentro de MobileFooter con fixed positioning */}
+          </div>
         </AuthProvider>
       </body>
     </html>

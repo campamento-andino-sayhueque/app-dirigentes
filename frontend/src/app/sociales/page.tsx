@@ -3,8 +3,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 export default function SocialesPage() {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
-        <div className="container mx-auto px-4 py-8 md:pt-8">
+      <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
+        <div className="container mx-auto px-4 py-8">
           <header className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
               🔥 <span className="text-[#FF6B35]">Sociales</span>
