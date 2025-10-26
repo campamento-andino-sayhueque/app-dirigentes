@@ -5,6 +5,10 @@ import {
   connectAuthEmulator,
 } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import {
+  getMessaging,
+  isSupported as messagingIsSupported,
+} from "firebase/messaging";
 
 const firebaseConfig = {
   // Configuración de Firebase - obtén estos valores desde Firebase Console
@@ -54,3 +58,18 @@ googleProvider.setCustomParameters({
 });
 
 export default app;
+
+// Helper: devuelve la instancia de Messaging sólo si se está en cliente y está soportado
+// Uso: const messaging = await getMessagingIfSupported(); // puede ser null
+export async function getMessagingIfSupported() {
+  if (typeof window === "undefined") return null;
+  try {
+    const supported = await messagingIsSupported();
+    if (!supported) return null;
+    return getMessaging(app);
+  } catch (err) {
+    // Si ocurre un error (por ejemplo en navegadores no soportados), devolvemos null
+    console.warn("Firebase messaging no soportado:", err);
+    return null;
+  }
+}

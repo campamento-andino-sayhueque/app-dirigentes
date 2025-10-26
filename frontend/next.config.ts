@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL ||
+      "localhost:8080" ||
       "https://backend-monolito-production.up.railway.app",
   },
 };

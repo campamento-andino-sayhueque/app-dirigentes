@@ -1,4 +1,5 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PushToggle from "@/components/PushToggle";
 
 export default function AvisosPage() {
   return (
@@ -13,10 +14,13 @@ export default function AvisosPage() {
           </header>
 
           <main className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+            <div className="bg-white rounded-2xl p-8 shadow-md text-center space-y-4">
               <p className="text-gray-600">
                 Próximamente: Centro de notificaciones
               </p>
+              <div className="flex justify-center">
+                <PushToggle />
+              </div>
             </div>
           </main>
         </div>
