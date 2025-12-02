@@ -1,8 +1,21 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithCredential,
+  GoogleAuthProvider,
+  signOut,
+} from "firebase/auth";
+import { auth, googleProvider, isUsingEmulators } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -28,9 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      if (isUsingEmulators) {
+        // En modo emulador, usar credenciales de prueba directamente
+        // Esto evita el problema de "No matching frame" con popups
+        const credential = GoogleAuthProvider.credential(
+          '{"sub": "test-user-uid", "email": "test@example.com", "email_verified": true, "name": "Usuario de Prueba"}'
+        );
+        await signInWithCredential(auth, credential);
+      } else {
+        // En producción, usar el flujo normal de popup
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
+      console.error("Error al iniciar sesión con Google:", error);
+      throw error;
     }
   };
 
@@ -38,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth);
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      console.error("Error al cerrar sesión:", error);
     }
   };
 
@@ -46,20 +70,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     signInWithGoogle,
-    logout
+    logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
   }
   return context;
 }
