@@ -31,8 +31,10 @@ export default function RootLayout({
         {/* Progressive Web App: manifest and meta tags */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#FF6B35" />
-        <link rel="icon" href="/file.svg" />
-        <link rel="apple-touch-icon" href="/file.svg" />
+        <link rel="icon" href="/logo-192.png" />
+        <link rel="apple-touch-icon" href="/logo-192.png" />
+        {/* Safari pinned tab mask icon */}
+        <link rel="mask-icon" href="/logo.svg" color="#FF6B35" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>

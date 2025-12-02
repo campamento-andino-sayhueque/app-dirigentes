@@ -6,10 +6,10 @@ export default function RegisterServiceWorker() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if ('serviceWorker' in navigator) {
+    if ("serviceWorker" in navigator) {
       // Register the service worker from the public folder
       navigator.serviceWorker
-        .register('/sw.js')
+        .register("/sw.js")
         .then(() => {
           // registration successful (silent)
         })

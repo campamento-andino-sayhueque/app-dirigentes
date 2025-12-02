@@ -1,15 +1,8 @@
 // Minimal service worker for basic offline caching
-const CACHE_NAME = 'cas-static-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/file.svg',
-  '/globe.svg',
-  '/favicon.ico'
-];
+const CACHE_NAME = "cas-static-v1";
+const ASSETS_TO_CACHE = ["/", "/manifest.json", "/logo.svg", "/logo.png"];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch(() => {
@@ -20,24 +13,24 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((k) => k !== CACHE_NAME)
-          .map((k) => caches.delete(k))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        )
       )
-    )
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // Only handle same-origin GET requests
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin) {
+  if (event.request.method !== "GET" || url.origin !== self.location.origin) {
     return;
   }
 
@@ -47,13 +40,15 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request)
         .then((res) => {
           // Put a copy in cache for future visits
-          if (res && res.status === 200 && res.type === 'basic') {
+          if (res && res.status === 200 && res.type === "basic") {
             const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, copy));
           }
           return res;
         })
-        .catch(() => caches.match('/'));
+        .catch(() => caches.match("/"));
     })
   );
 });

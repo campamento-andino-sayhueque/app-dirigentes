@@ -16,7 +16,7 @@ export default function PagosPage() {
   const loadMpSdk = () => {
     return new Promise<void>((resolve, reject) => {
       if (typeof window === "undefined") return reject("no-window");
-  if ((window as any).MercadoPago) return resolve();
+      if ((window as any).MercadoPago) return resolve();
       const script = document.createElement("script");
       script.src = "https://sdk.mercadopago.com/js/v2";
       script.async = true;
