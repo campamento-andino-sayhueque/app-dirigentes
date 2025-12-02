@@ -11,11 +11,9 @@ import {
   User,
   onAuthStateChanged,
   signInWithPopup,
-  signInWithCredential,
-  GoogleAuthProvider,
   signOut,
 } from "firebase/auth";
-import { auth, googleProvider, isUsingEmulators } from "@/lib/firebase";
+import { auth, googleProvider } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -41,17 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      if (isUsingEmulators) {
-        // En modo emulador, usar credenciales de prueba directamente
-        // Esto evita el problema de "No matching frame" con popups
-        const credential = GoogleAuthProvider.credential(
-          '{"sub": "test-user-uid", "email": "test@example.com", "email_verified": true, "name": "Usuario de Prueba"}'
-        );
-        await signInWithCredential(auth, credential);
-      } else {
-        // En producción, usar el flujo normal de popup
-        await signInWithPopup(auth, googleProvider);
-      }
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Error al iniciar sesión con Google:", error);
       throw error;
