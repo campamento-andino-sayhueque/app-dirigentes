@@ -16,7 +16,14 @@
     "authzen-gma61": {
       "hosting": {
         "casayhueque": [
-          "app-dirigentes"
+          "authzen-gma61"
+        ]
+      }
+    },
+    "sample-firebase-ai-app-55ff6": {
+      "hosting": {
+        "casayhueque": [
+          "sample-firebase-ai-app-55ff6"
         ]
       }
     }
