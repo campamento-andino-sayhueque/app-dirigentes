@@ -1,31 +1,57 @@
-import LoginButton from "@/components/LoginButton";
-import SeedDataButton from "@/components/SeedDataButton";
+"use client";
 
-export default function Home() {
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginButton from "@/components/LoginButton";
+
+export default function LoginPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirigir a dashboard si ya está autenticado
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  // Mostrar loading mientras verifica la autenticación o está redirigiendo
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35]"></div>
+      </div>
+    );
+  }
+
+  // Página de login
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            <span className="text-[#FF6B35]">Campamento</span>{' '}
-            <span className="text-green-600">Andino</span>{' '}
-            <span className="text-red-600">Sayhueque</span>
-          </h1>
-          <p className="text-xl text-gray-600">
-            Sistema de Gestión del Campamento
-          </p>
-        </header>
-        
-        <main className="max-w-md mx-auto space-y-6">
-          <LoginButton />
-          <SeedDataButton />
-        </main>
-        
-        <footer className="text-center mt-12">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-orange-50 to-red-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Logo y título */}
+        <div className="text-center mb-8">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🏕️</div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">
+              <span className="text-[#FF6B35]">Campamento</span>{" "}
+              <span className="text-green-600">Andino</span>
+            </h1>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Sayhueque</h2>
+          </div>
+          <p className="text-xl text-gray-700 mb-2">Sistema de Gestión</p>
+          <p className="text-gray-600">Para dirigentes y participantes</p>
+        </div>
+
+        {/* Botón de login (ya incluye su propio card) */}
+        <LoginButton />
+
+        {/* Footer */}
+        <div className="text-center mt-8">
           <p className="text-gray-500 text-sm">
-            Aventura, naturaleza y crecimiento personal
+            🌲 Aventura, naturaleza y crecimiento personal 🏔️
           </p>
-        </footer>
+        </div>
       </div>
     </div>
   );

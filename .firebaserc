@@ -5,6 +5,21 @@
     "qa": "sample-firebase-ai-app-55ff6",
     "prod": "cas-web-465521"
   },
-  "targets": {},
+  "targets": {
+    "cas-web-465521": {
+      "hosting": {
+        "casayhueque": [
+          "casayhueque"
+        ]
+      }
+    },
+    "authzen-gma61": {
+      "hosting": {
+        "casayhueque": [
+          "app-dirigentes"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

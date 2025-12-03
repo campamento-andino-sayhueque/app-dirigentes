@@ -9,6 +9,11 @@ yarn-error# dotenv environment variables file
 .env.production
 .env.development
 
+# Archivos de documentación con información sensible
+PRIMERA_CONEXION.md
+PRUEBA_RAPIDA.md
+FIX_VARIABLES_ENTORNO.md
+
 # Next.js build output - CONTIENE SECRETS NO DEBE COMMITEARSE
 public/_next/
 public/index.html
