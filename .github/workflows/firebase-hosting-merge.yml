@@ -100,13 +100,16 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Deploy to Development
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
-          channelId: live
-          projectId: authzen-gma61
+      - name: Deploy to Development (firebase-tools)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}
+        run: |
+          cd frontend
+          # write service account to a temp file and use Application Default Credentials
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > /tmp/sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          # deploy explicitly to the hosting site for dev environment
+          npx firebase-tools@latest deploy --only hosting:casayhueque --project authzen-gma61 --non-interactive
 
   # Job para QA
   deploy-qa:
@@ -148,10 +151,13 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Deploy to QA
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}'
-          channelId: live
-          projectId: sample-firebase-ai-app-55ff6
+      - name: Deploy to QA (firebase-tools)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CAS_WEB_465521 }}
+        run: |
+          cd frontend
+          # write service account to a temp file and use Application Default Credentials
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > /tmp/sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          # deploy explicitly to the hosting site for qa environment
+          npx firebase-tools@latest deploy --only hosting:casayhueque --project sample-firebase-ai-app-55ff6 --non-interactive
