@@ -8,8 +8,6 @@ const nextConfig: NextConfig = {
     output: "export",
     distDir: "out",
   }),
-  // Desactivar Turbopack en desarrollo para evitar bugs conocidos
-  turbopack: false,
   trailingSlash: true,
   images: {
     unoptimized: true,
