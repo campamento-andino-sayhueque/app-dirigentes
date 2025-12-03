@@ -12,6 +12,13 @@
           "casayhueque"
         ]
       }
+    },
+    "authzen-gma61": {
+      "hosting": {
+        "casayhueque": [
+          "app-dirigentes"
+        ]
+      }
     }
   },
   "etags": {}

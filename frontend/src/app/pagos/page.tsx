@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -15,7 +16,6 @@ export default function PagosPage() {
   const loadMpSdk = () => {
     return new Promise<void>((resolve, reject) => {
       if (typeof window === "undefined") return reject("no-window");
-      // @ts-expect-error window.MercadoPago es inyectado por el SDK externo
       if ((window as any).MercadoPago) return resolve();
       const script = document.createElement("script");
       script.src = "https://sdk.mercadopago.com/js/v2";
@@ -64,7 +64,6 @@ export default function PagosPage() {
       if (publicKey) {
         try {
           await loadMpSdk();
-          // @ts-expect-error MercadoPago inyectado por el SDK en runtime
           const mp = new (window as any).MercadoPago(publicKey, {
             locale: "es-AR",
           });

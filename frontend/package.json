@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "concurrently -n \"firebase,next\" -c \"yellow,cyan\" \"npm run firebase:emulators\" \"npm run dev:next\"",
+    "dev:next": "next dev",
     "build": "next build",
     "build:prod": "cross-env NODE_ENV=production NEXT_PUBLIC_API_URL=https://backend-monolito-production.up.railway.app next build",
     "start": "next start",
@@ -15,13 +16,13 @@
     "firebase:rules:dev": "shx cp ../firestore.rules.dev ../firestore.rules && echo ✅ Reglas de DESARROLLO activadas",
     "firebase:rules:prod": "shx cp ../firestore.rules.prod ../firestore.rules && echo ✅ Reglas de PRODUCCIÓN activadas",
     "firebase:rules:status": "echo 'Estado actual de las reglas:' && head -n 5 ../firestore.rules | grep -E 'REGLAS|reglas|allow.*true'",
-    "dev:firebase": "concurrently \"npm run firebase:emulators\" \"npm run dev\""
+    "generate:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
     "firebase": "^12.0.0",
     "lucide-react": "^0.546.0",
-    "next": "15.4.5",
+    "next": "^16.0.6",
     "react": "19.1.0",
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.1.0"
@@ -35,7 +36,9 @@
     "@types/react-dom": "^19",
     "concurrently": "^9.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.4.5",
+    "eslint-config-next": "^16.0.6",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.4",
     "shx": "^0.3.4",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -24,8 +24,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:demo",
 };
 
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
+// Inicializar Firebase solo si no existe una instancia previa
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Inicializar Firebase Auth
 export const auth = getAuth(app);
@@ -33,21 +33,44 @@ export const auth = getAuth(app);
 // Inicializar Firestore
 export const db = getFirestore(app);
 
+// Flag para evitar conexiones múltiples a emuladores
+let emulatorsConnected = false;
+
+// Determinar si usar emuladores
+// Usar emuladores si estamos en desarrollo O si estamos en localhost
+const shouldUseEmulators = 
+  typeof window !== "undefined" && 
+  (process.env.NODE_ENV === "development" || 
+   window.location.hostname === "localhost" ||
+   window.location.hostname === "127.0.0.1");
+
+export const isUsingEmulators = shouldUseEmulators;
+
 // Configurar emuladores en desarrollo
-if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+if (shouldUseEmulators && !emulatorsConnected) {
+  emulatorsConnected = true;
+  
   // Solo conectar a emuladores si no están ya conectados
-  try {
-    connectAuthEmulator(auth, "http://127.0.0.1:9099", {
-      disableWarnings: true,
-    });
-  } catch {
-    // Ya conectado, ignorar error
+  // @ts-expect-error - _canInitEmulator es una propiedad interna de Firebase
+  if (auth._canInitEmulator) {
+    try {
+      connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+        disableWarnings: true,
+      });
+      console.log("🔧 Auth Emulator conectado");
+    } catch {
+      // Ya conectado, ignorar error
+    }
   }
 
-  try {
-    connectFirestoreEmulator(db, "127.0.0.1", 8080);
-  } catch {
-    // Ya conectado, ignorar error
+  // @ts-expect-error - _settingsFrozen es una propiedad interna de Firebase
+  if (!db._settingsFrozen) {
+    try {
+      connectFirestoreEmulator(db, "127.0.0.1", 8080);
+      console.log("🔧 Firestore Emulator conectado");
+    } catch {
+      // Ya conectado, ignorar error
+    }
   }
 }
 
