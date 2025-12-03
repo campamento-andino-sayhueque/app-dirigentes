@@ -6,8 +6,8 @@ La aplicación web progresiva para dirigentes del CAS (Campamento Andino Sayhueq
 | Entorno | URL | Rama | Proyecto Firebase |
 |---------|-----|------|-------------------|
 | **Production** | https://casayhueque.web.app | `main` | `cas-web-465521` |
-| **QA** | https://sample-firebase-ai-app-55ff6.web.app | `qa` | `sample-firebase-ai-app-55ff6` |
-| **Development** | https://authzen-gma61.web.app | `dev` | `authzen-gma61` |
+| **QA** | https://qa.casayhueque.org | `qa` | `sample-firebase-ai-app-55ff6` |
+| **Development** | https://dev.casayhueque.org | `dev` | `authzen-gma61` |
 
 ## 🚀 Stack Tecnológico
 
