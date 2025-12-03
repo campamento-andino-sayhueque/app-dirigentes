@@ -142,8 +142,8 @@ class ApiClient {
    */
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await this.get("/api/health");
-      return !response.error;
+      const response = await this.get("/actuator/health");
+      return !response.error && response.data?.status === "UP";
     } catch {
       return false;
     }

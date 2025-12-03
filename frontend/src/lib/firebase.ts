@@ -66,7 +66,7 @@ if (shouldUseEmulators && !emulatorsConnected) {
   // @ts-expect-error - _settingsFrozen es una propiedad interna de Firebase
   if (!db._settingsFrozen) {
     try {
-      connectFirestoreEmulator(db, "127.0.0.1", 8080);
+      connectFirestoreEmulator(db, "127.0.0.1", 8081);
       console.log("🔧 Firestore Emulator conectado");
     } catch {
       // Ya conectado, ignorar error
