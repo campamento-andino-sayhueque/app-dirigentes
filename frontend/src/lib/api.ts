@@ -155,3 +155,89 @@ export const api = new ApiClient(API_BASE_URL);
 
 // Exportar URL base para uso directo si es necesario
 export { API_BASE_URL };
+
+// ============================================
+// Tipos para endpoints de autenticación
+// ============================================
+
+export interface UserInfo {
+  uid: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  roles: string[];
+}
+
+// ============================================
+// Funciones de autenticación
+// ============================================
+
+/**
+ * Obtiene el token de Firebase del usuario actual (para uso externo)
+ */
+export async function getAuthToken(): Promise<string | null> {
+  const user = auth.currentUser;
+  if (!user) {
+    return null;
+  }
+  try {
+    return await user.getIdToken();
+  } catch (error) {
+    console.error("Error obteniendo token:", error);
+    return null;
+  }
+}
+
+/**
+ * Ping público (sin autenticación)
+ */
+export async function publicPing(): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/api/public/ping`);
+  return response.text();
+}
+
+/**
+ * Obtiene la información del usuario autenticado desde el backend
+ */
+export async function getMe(): Promise<ApiResponse<UserInfo>> {
+  return api.get<UserInfo>("/api/me");
+}
+
+/**
+ * Ping protegido (requiere autenticación)
+ */
+export async function protectedPing(): Promise<string> {
+  const token = await getAuthToken();
+  
+  const response = await fetch(`${API_BASE_URL}/api/protected/ping`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  
+  return response.text();
+}
+
+/**
+ * Verifica si el backend está disponible
+ */
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    await publicPing();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Valida el token actual contra el backend
+ */
+export async function validateToken(): Promise<boolean> {
+  try {
+    const response = await getMe();
+    return !response.error;
+  } catch {
+    return false;
+  }
+}
