@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Home, Users, Calendar, CreditCard, Bell, LogOut } from "lucide-react";
+import { Home, Users, Calendar, CreditCard, Bell } from "lucide-react";
+import UserAvatar from "./UserAvatar";
 
 export default function MobileFooter() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   // No mostrar el footer si no está autenticado
   if (!user) {
@@ -82,15 +83,8 @@ export default function MobileFooter() {
               })}
             </div>
 
-            {/* Botón de cerrar sesión */}
-            <button
-              onClick={logout}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium hidden lg:block">Salir</span>
-            </button>
+            {/* Avatar del usuario con dropdown */}
+            <UserAvatar size="md" showName={true} showDropdown={true} />
           </div>
         </div>
       </nav>
