@@ -233,6 +233,23 @@ export default function CalendarioPage() {
     setIsEditing(true);
   };
 
+  // Tipos de eventos para mostrar en la leyenda
+  const tiposEventoToDisplay = useMemo(() => {
+    const defaultTipos: { value: string; label: string }[] = [
+      { value: "importante", label: "Importante" },
+      { value: "fecha_limite", label: "Fecha límite" },
+      { value: "reunion", label: "Reunión" },
+      { value: "taller", label: "Taller" },
+      { value: "excursion", label: "Excursión" },
+      { value: "actividad", label: "Actividad" },
+    ];
+    // Asegurar que tiposEvento es un array y no tiene duplicados de valor si es posible
+    if (!Array.isArray(tiposEvento) || tiposEvento.length === 0) {
+      return defaultTipos;
+    }
+    return tiposEvento;
+  }, [tiposEvento]);
+
   return (
     <ProtectedRoute>
       <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
@@ -416,28 +433,17 @@ export default function CalendarioPage() {
                 Tipos de eventos
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {(() => {
-                  const defaultTipos: { value: string; label: string }[] = [
-                    { value: "importante", label: "Importante" },
-                    { value: "fecha_limite", label: "Fecha límite" },
-                    { value: "reunion", label: "Reunión" },
-                    { value: "taller", label: "Taller" },
-                    { value: "excursion", label: "Excursión" },
-                    { value: "actividad", label: "Actividad" },
-                  ];
-                  const tipos = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
-                  return tipos.map((tipo, index) => (
-                    <div key={`${tipo.value}-${index}`} className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: getEventColor(tipo.value) }}
-                      />
-                      <span className="text-sm text-gray-700">
-                        {getEventIcon(tipo.value)} {tipo.label}
-                      </span>
-                    </div>
-                  ));
-                })()}
+                {tiposEventoToDisplay.map((tipo, index) => (
+                  <div key={`${tipo.value}-${index}`} className="flex items-center gap-2">
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: getEventColor(tipo.value) }}
+                    />
+                    <span className="text-sm text-gray-700">
+                      {getEventIcon(tipo.value)} {tipo.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </main>
@@ -610,20 +616,9 @@ export default function CalendarioPage() {
                     onChange={(e) => setNewEvento({ ...newEvento, tipo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
                   >
-                    {(() => {
-                      const defaultTipos: { value: string; label: string }[] = [
-                        { value: "actividad", label: "Actividad" },
-                        { value: "reunion", label: "Reunión" },
-                        { value: "importante", label: "Importante" },
-                        { value: "fecha_limite", label: "Fecha límite" },
-                        { value: "taller", label: "Taller" },
-                        { value: "excursion", label: "Excursión" },
-                      ];
-                      const tipos: { value: string; label: string }[] = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
-                      return tipos.map((tipo) => (
-                        <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-                      ));
-                    })()}
+                    {tiposEventoToDisplay.map((tipo, index) => (
+                      <option key={`${tipo.value}-${index}`} value={tipo.value}>{tipo.label}</option>
+                    ))}
                   </select>
                 </div>
 
