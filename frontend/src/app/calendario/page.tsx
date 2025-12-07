@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Calendar, dateFnsLocalizer, View, Event } from "react-big-calendar";
 import { format } from "date-fns/format";
@@ -10,6 +10,8 @@ import { getDay } from "date-fns/getDay";
 import { es } from "date-fns/locale/es";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { casColors } from "@/lib/colors";
+import { useEventos, useTiposEvento, useCreateEvento, useDeleteEvento, useUpdateEvento } from "@/hooks/useCalendario";
+import { EventoCalendarioRequest } from "@/lib/api/types";
 
 // Configurar localizador de date-fns
 const locales = {
@@ -24,88 +26,17 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Tipos de eventos
+// Tipos de eventos para el calendario UI
 export interface EventoCampamento extends Event {
   id: string;
   title: string;
   start: Date;
   end: Date;
   descripcion: string;
-  tipo:
-    | "actividad"
-    | "reunion"
-    | "importante"
-    | "fecha-limite"
-    | "taller"
-    | "excursion";
+  tipo: string;
   participantes?: string[];
   ubicacion?: string;
 }
-
-// Datos de ejemplo (mock - luego conectar con Firebase)
-const eventosMock: EventoCampamento[] = [
-  {
-    id: "1",
-    title: "Reunión de Padres",
-    start: new Date(2025, 10, 25, 18, 0), // 25 nov 2025, 18:00
-    end: new Date(2025, 10, 25, 20, 0),
-    descripcion: "Reunión informativa sobre el campamento de verano",
-    tipo: "reunion",
-    ubicacion: "Sede del campamento",
-  },
-  {
-    id: "2",
-    title: "Fecha límite de inscripciones",
-    start: new Date(2025, 11, 1, 0, 0),
-    end: new Date(2025, 11, 1, 23, 59),
-    descripcion: "Último día para completar la inscripción",
-    tipo: "fecha-limite",
-  },
-  {
-    id: "3",
-    title: "Inicio del Campamento",
-    start: new Date(2025, 11, 15, 9, 0),
-    end: new Date(2025, 11, 15, 18, 0),
-    descripcion: "Primer día de actividades del campamento",
-    tipo: "importante",
-    ubicacion: "Campamento Base",
-  },
-  {
-    id: "4",
-    title: "Taller de Supervivencia",
-    start: new Date(2025, 11, 16, 10, 0),
-    end: new Date(2025, 11, 16, 13, 0),
-    descripcion: "Aprende técnicas básicas de supervivencia",
-    tipo: "taller",
-    ubicacion: "Zona de bosque",
-  },
-  {
-    id: "5",
-    title: "Excursión al Cerro",
-    start: new Date(2025, 11, 17, 8, 0),
-    end: new Date(2025, 11, 17, 17, 0),
-    descripcion: "Trekking al mirador panorámico",
-    tipo: "excursion",
-    ubicacion: "Cerro Campanario",
-  },
-  {
-    id: "6",
-    title: "Taller de Primeros Auxilios",
-    start: new Date(2025, 11, 18, 14, 0),
-    end: new Date(2025, 11, 18, 16, 0),
-    descripcion: "Capacitación en primeros auxilios básicos",
-    tipo: "taller",
-  },
-  {
-    id: "7",
-    title: "Fogón y Cierre",
-    start: new Date(2025, 11, 20, 19, 0),
-    end: new Date(2025, 11, 20, 22, 0),
-    descripcion: "Fogón de despedida y cierre del campamento",
-    tipo: "importante",
-    ubicacion: "Fogón Central",
-  },
-];
 
 export default function CalendarioPage() {
   const [view, setView] = useState<View>("month");
@@ -114,6 +45,30 @@ export default function CalendarioPage() {
     null
   );
   const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Estado para nuevo evento
+  const [newEvento, setNewEvento] = useState<Partial<EventoCalendarioRequest>>({
+    titulo: "",
+    descripcion: "",
+    tipo: "actividad",
+    fechaInicio: "",
+    fechaFin: "",
+    ubicacion: "",
+  });
+
+  // Hooks de la API
+  const { eventosCalendar, loading, error, refetch } = useEventos();
+  const { tipos: tiposEvento } = useTiposEvento();
+  const { createEvento, loading: creando } = useCreateEvento();
+  const { updateEvento, loading: actualizando } = useUpdateEvento();
+  const { deleteEvento, loading: eliminando } = useDeleteEvento();
+
+  // Usar eventos de la API
+  const eventos: EventoCampamento[] = useMemo(() => {
+    return (eventosCalendar || []) as EventoCampamento[];
+  }, [eventosCalendar]);
 
   // Calcular días restantes hasta el campamento
   const fechaInicioCampamento = new Date(2025, 11, 15);
@@ -127,6 +82,7 @@ export default function CalendarioPage() {
     switch (tipo) {
       case "importante":
         return casColors.primary.orange;
+      case "fecha_limite":
       case "fecha-limite":
         return casColors.primary.red;
       case "reunion":
@@ -200,6 +156,7 @@ export default function CalendarioPage() {
     switch (tipo) {
       case "importante":
         return "⭐";
+      case "fecha_limite":
       case "fecha-limite":
         return "⏰";
       case "reunion":
@@ -215,6 +172,67 @@ export default function CalendarioPage() {
     }
   };
 
+  // Manejar creación de evento
+  const handleCreateEvento = async () => {
+    if (!newEvento.titulo || !newEvento.fechaInicio || !newEvento.fechaFin) {
+      alert("Por favor completa los campos requeridos");
+      return;
+    }
+
+    const result = await createEvento(newEvento as EventoCalendarioRequest);
+    if (!result.error) {
+      setShowCreateModal(false);
+      setNewEvento({
+        titulo: "",
+        descripcion: "",
+        tipo: "actividad",
+        fechaInicio: "",
+        fechaFin: "",
+        ubicacion: "",
+      });
+      refetch();
+    }
+  };
+
+  // Manejar actualización de evento
+  const handleUpdateEvento = async () => {
+    if (!selectedEvent || !newEvento.titulo) return;
+    
+    const result = await updateEvento(Number(selectedEvent.id), newEvento as EventoCalendarioRequest);
+    if (!result.error) {
+      setShowModal(false);
+      setIsEditing(false);
+      refetch();
+    }
+  };
+
+  // Manejar eliminación de evento
+  const handleDeleteEvento = async () => {
+    if (!selectedEvent) return;
+    
+    if (confirm("¿Estás seguro de eliminar este evento?")) {
+      const result = await deleteEvento(Number(selectedEvent.id));
+      if (!result.error) {
+        setShowModal(false);
+        refetch();
+      }
+    }
+  };
+
+  // Iniciar edición de evento
+  const startEditing = () => {
+    if (!selectedEvent) return;
+    setNewEvento({
+      titulo: selectedEvent.title,
+      descripcion: selectedEvent.descripcion,
+      tipo: selectedEvent.tipo,
+      fechaInicio: selectedEvent.start.toISOString(),
+      fechaFin: selectedEvent.end.toISOString(),
+      ubicacion: selectedEvent.ubicacion || "",
+    });
+    setIsEditing(true);
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
@@ -226,23 +244,37 @@ export default function CalendarioPage() {
             <p className="text-gray-600">
               Eventos y actividades del campamento
             </p>
+            {error && (
+              <p className="text-red-600 text-sm mt-2">
+                ❌ Error al conectar con el servidor: {error.message}
+              </p>
+            )}
           </header>
 
           {/* Contador de días */}
           <div className="max-w-7xl mx-auto mb-6">
             <div className="bg-white rounded-2xl p-4 md:p-6 shadow-md border-2 border-[#FF6B35]">
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-4xl md:text-6xl font-bold text-[#FF6B35]">
-                  {diasRestantes}
-                </div>
-                <div className="text-left">
-                  <div className="text-lg md:text-2xl text-gray-700 uppercase tracking-wide font-medium">
-                    DÍAS
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl md:text-6xl font-bold text-[#FF6B35]">
+                    {diasRestantes}
                   </div>
-                  <p className="text-gray-600 text-xs md:text-base">
-                    para el campamento 2025/2026
-                  </p>
+                  <div className="text-left">
+                    <div className="text-lg md:text-2xl text-gray-700 uppercase tracking-wide font-medium">
+                      DÍAS
+                    </div>
+                    <p className="text-gray-600 text-xs md:text-base">
+                      para el campamento 2025/2026
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span>➕</span>
+                  <span className="hidden md:inline">Nuevo evento</span>
+                </button>
               </div>
             </div>
           </div>
@@ -356,7 +388,7 @@ export default function CalendarioPage() {
 
               <Calendar
                 localizer={localizer}
-                events={eventosMock}
+                events={eventos}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: 600 }}
@@ -371,6 +403,11 @@ export default function CalendarioPage() {
                 popup
                 selectable
               />
+              {loading && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35]"></div>
+                </div>
+              )}
             </div>
 
             {/* Leyenda de tipos de eventos */}
@@ -379,24 +416,28 @@ export default function CalendarioPage() {
                 Tipos de eventos
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { tipo: "importante", label: "Importante" },
-                  { tipo: "fecha-limite", label: "Fecha límite" },
-                  { tipo: "reunion", label: "Reunión" },
-                  { tipo: "taller", label: "Taller" },
-                  { tipo: "excursion", label: "Excursión" },
-                  { tipo: "actividad", label: "Actividad" },
-                ].map(({ tipo, label }) => (
-                  <div key={tipo} className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: getEventColor(tipo) }}
-                    />
-                    <span className="text-sm text-gray-700">
-                      {getEventIcon(tipo)} {label}
-                    </span>
-                  </div>
-                ))}
+                {(() => {
+                  const defaultTipos: { value: string; label: string }[] = [
+                    { value: "importante", label: "Importante" },
+                    { value: "fecha_limite", label: "Fecha límite" },
+                    { value: "reunion", label: "Reunión" },
+                    { value: "taller", label: "Taller" },
+                    { value: "excursion", label: "Excursión" },
+                    { value: "actividad", label: "Actividad" },
+                  ];
+                  const tipos: { value: string; label: string }[] = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
+                  return tipos.map((tipo: { value: string; label: string }) => (
+                    <div key={tipo.value} className="flex items-center gap-2">
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: getEventColor(tipo.value) }}
+                      />
+                      <span className="text-sm text-gray-700">
+                        {getEventIcon(tipo.value)} {tipo.label}
+                      </span>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </main>
@@ -487,8 +528,160 @@ export default function CalendarioPage() {
                 >
                   Cerrar
                 </button>
-                <button className="flex-1 bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                  Ver más detalles
+                <button 
+                  onClick={startEditing}
+                  className="flex-1 bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  ✏️ Editar
+                </button>
+                <button 
+                  onClick={handleDeleteEvento}
+                  disabled={eliminando}
+                  className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {eliminando ? "..." : "🗑️"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de crear/editar evento */}
+        {(showCreateModal || isEditing) && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              setShowCreateModal(false);
+              setIsEditing(false);
+            }}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {isEditing ? "Editar evento" : "Nuevo evento"}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setIsEditing(false);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-500 font-medium mb-1 block">
+                    Título *
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvento.titulo || ""}
+                    onChange={(e) => setNewEvento({ ...newEvento, titulo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                    placeholder="Nombre del evento"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-500 font-medium mb-1 block">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={newEvento.descripcion || ""}
+                    onChange={(e) => setNewEvento({ ...newEvento, descripcion: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                    placeholder="Descripción del evento"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-500 font-medium mb-1 block">
+                    Tipo de evento
+                  </label>
+                  <select
+                    value={newEvento.tipo || "actividad"}
+                    onChange={(e) => setNewEvento({ ...newEvento, tipo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                  >
+                    {(() => {
+                      const defaultTipos: { value: string; label: string }[] = [
+                        { value: "actividad", label: "Actividad" },
+                        { value: "reunion", label: "Reunión" },
+                        { value: "importante", label: "Importante" },
+                        { value: "fecha_limite", label: "Fecha límite" },
+                        { value: "taller", label: "Taller" },
+                        { value: "excursion", label: "Excursión" },
+                      ];
+                      const tipos: { value: string; label: string }[] = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
+                      return tipos.map((tipo) => (
+                        <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                      ));
+                    })()}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500 font-medium mb-1 block">
+                      Fecha inicio *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={newEvento.fechaInicio ? newEvento.fechaInicio.slice(0, 16) : ""}
+                      onChange={(e) => setNewEvento({ ...newEvento, fechaInicio: new Date(e.target.value).toISOString() })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 font-medium mb-1 block">
+                      Fecha fin *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={newEvento.fechaFin ? newEvento.fechaFin.slice(0, 16) : ""}
+                      onChange={(e) => setNewEvento({ ...newEvento, fechaFin: new Date(e.target.value).toISOString() })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-500 font-medium mb-1 block">
+                    Ubicación
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvento.ubicacion || ""}
+                    onChange={(e) => setNewEvento({ ...newEvento, ubicacion: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35]"
+                    placeholder="Lugar del evento"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setIsEditing(false);
+                  }}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={isEditing ? handleUpdateEvento : handleCreateEvento}
+                  disabled={creando || actualizando}
+                  className="flex-1 bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {creando || actualizando ? "Guardando..." : isEditing ? "Actualizar" : "Crear evento"}
                 </button>
               </div>
             </div>
