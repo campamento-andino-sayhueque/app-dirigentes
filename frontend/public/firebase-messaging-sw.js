@@ -41,9 +41,15 @@ function initFirebase(config) {
         "[firebase-messaging-sw] Received background message ",
         payload
       );
+
+      const envPrefix = config.appEnv && config.appEnv !== 'prod'
+        ? `[${config.appEnv.toUpperCase()}] `
+        : '';
+
       const notificationTitle =
-        (payload && payload.notification && payload.notification.title) ||
-        "Notificación";
+        envPrefix + ((payload && payload.notification && payload.notification.title) ||
+          "Notificación");
+
       const notificationOptions = {
         body:
           (payload && payload.notification && payload.notification.body) || "",
