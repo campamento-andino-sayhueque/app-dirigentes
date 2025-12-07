@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 
+export const dynamic = 'force-static';
+
 export default function manifest(): MetadataRoute.Manifest {
   const env = process.env.NEXT_PUBLIC_APP_ENV;
   let name = "CAS";
