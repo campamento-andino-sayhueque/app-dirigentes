@@ -425,9 +425,9 @@ export default function CalendarioPage() {
                     { value: "excursion", label: "Excursión" },
                     { value: "actividad", label: "Actividad" },
                   ];
-                  const tipos: { value: string; label: string }[] = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
-                  return tipos.map((tipo: { value: string; label: string }) => (
-                    <div key={tipo.value} className="flex items-center gap-2">
+                  const tipos = tiposEvento.length > 0 ? tiposEvento : defaultTipos;
+                  return tipos.map((tipo, index) => (
+                    <div key={`${tipo.value}-${index}`} className="flex items-center gap-2">
                       <div
                         className="w-4 h-4 rounded"
                         style={{ backgroundColor: getEventColor(tipo.value) }}
