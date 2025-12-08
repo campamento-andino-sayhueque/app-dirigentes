@@ -6,7 +6,9 @@
 # Usa signInWithIdp para simular login real con Google
 
 EMULATOR_HOST="http://127.0.0.1:9099"
-PROJECT_ID="demo-project"
+# IMPORTANTE: Este debe coincidir con el projectId usado en el frontend
+# El emulador genera tokens con este audience
+PROJECT_ID="authzen-gma61"
 
 echo "🔐 Creando usuarios de prueba en Firebase Auth Emulator..."
 echo ""
@@ -39,14 +41,31 @@ create_google_user() {
     
     if [ -n "$localId" ]; then
         # Agregar custom claims (rol) al usuario
+        # El backend espera claims como: admin=true, dirigente=true, padre=true
+        local claims=""
+        case $role in
+            ADMIN)
+                claims='{\"admin\":true,\"dirigente\":false,\"padre\":false}'
+                ;;
+            DIRIGENTE)
+                claims='{\"admin\":false,\"dirigente\":true,\"padre\":false}'
+                ;;
+            PADRE)
+                claims='{\"admin\":false,\"dirigente\":false,\"padre\":true}'
+                ;;
+            *)
+                claims='{\"admin\":false,\"dirigente\":false,\"padre\":false}'
+                ;;
+        esac
+        
         curl -s -X POST "${EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${PROJECT_ID}/accounts:update" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer owner" \
             -d "{
                 \"localId\": \"${localId}\",
-                \"customAttributes\": \"{\\\"role\\\":\\\"${role}\\\"}\"
+                \"customAttributes\": \"${claims}\"
             }" > /dev/null 2>&1
-        echo "    ✓ Creado con UID: $localId"
+        echo "    ✓ Creado con UID: $localId (claims: $role)"
     else
         echo "    ✗ Error: $response"
     fi

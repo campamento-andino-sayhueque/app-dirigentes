@@ -1,0 +1,1242 @@
+openapi: 3.1.0
+info:
+  title: CAS Backend API
+  description: |
+    API del sistema de gestión del Campamento Andino Sayhueque.
+
+    ## Autenticación
+    Esta API usa Firebase Authentication. Para probar los endpoints:
+
+    1. Obtén un token JWT de Firebase Auth desde la app frontend
+    2. Click en el botón "Authorize" 🔒
+    3. Ingresa el token en formato: `Bearer <tu-token>`
+
+    ## Roles
+    - **ADMIN**: Acceso total al sistema
+    - **DIRIGENTE**: Gestión de actividades y participantes
+    - **PADRE**: Vista de información de sus hijos
+  contact:
+    name: CAS Dev Team
+    email: dev@cas.org.ar
+  license:
+    name: Private
+    url: https://cas.org.ar
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Servidor de desarrollo local
+- url: https://backend-monolito-production.up.railway.app
+  description: Servidor de producción (Railway)
+security:
+- FirebaseJWT: []
+tags:
+- name: Pagos
+  description: Navegación y operaciones de pagos del CAS
+- name: Notificaciones
+  description: Registro y gestión de tokens de dispositivo para push
+- name: Usuarios
+  description: Gestión de usuarios del sistema CAS
+- name: Calendario
+  description: Navegación y catálogos del calendario del CAS
+- name: API Root
+  description: Punto de entrada de la API con descubrimiento HATEOAS
+- name: Roles
+  description: Gestión de roles del sistema CAS
+paths:
+  /api/calendario/eventos/{id}:
+    get:
+      tags:
+      - evento-calendario-controller
+      summary: Obtener evento
+      description: Devuelve un evento específico del calendario
+      operationId: getById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventoCalendarioModel"
+    put:
+      tags:
+      - evento-calendario-controller
+      summary: Actualizar evento
+      description: Actualiza un evento existente
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventoCalendarioRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventoCalendarioModel"
+    delete:
+      tags:
+      - evento-calendario-controller
+      summary: Eliminar evento
+      description: Elimina un evento del calendario
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/usuarios/{id}/roles/{rol}:
+    post:
+      tags:
+      - usuario-controller
+      summary: Asignar rol
+      description: Asigna un rol a un usuario (solo ADMIN)
+      operationId: agregarRol
+      parameters:
+      - name: id
+        in: path
+        description: ID del usuario
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: rol
+        in: path
+        description: "Rol a asignar: ADMIN, DIRIGENTE, ACAMPANTE, PADRE"
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Rol asignado exitosamente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "404":
+          description: Usuario no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "400":
+          description: Rol inválido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+    delete:
+      tags:
+      - usuario-controller
+      operationId: removerRol
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: rol
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+  /api/pagos/intenciones:
+    post:
+      tags:
+      - intencion-pago-controller
+      summary: Crear intención de pago
+      description: Genera una intención de cobro para cuotas seleccionadas
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntencionPagoRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IntencionPagoResponse"
+  /api/pagos/inscripciones:
+    post:
+      tags:
+      - inscripcion-controller
+      summary: Crear inscripción
+      description: Crea una inscripción a un plan y genera el cronograma de cuotas
+      operationId: enroll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InscripcionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/InscripcionResponse"
+  /api/mercadopago/webhook:
+    post:
+      tags:
+      - mercado-pago-controller
+      summary: Webhook de Mercado Pago
+      description: Recibe notificaciones IPN/Webhook de Mercado Pago
+      operationId: receiveWebhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+  /api/mercadopago/checkout-pro/preferences:
+    post:
+      tags:
+      - mercado-pago-controller
+      summary: Crear preferencia
+      description: Crea una preferencia de pago de Checkout Pro
+      operationId: createPreference
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpPreferenceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MpPreferenceResponse"
+  /api/device-tokens:
+    post:
+      tags:
+      - token-dispositivo-controller
+      summary: Registrar token
+      description: Registra o actualiza el token de dispositivo para notificaciones
+        push
+      operationId: registrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PeticionRegistro"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+    delete:
+      tags:
+      - token-dispositivo-controller
+      summary: Eliminar token
+      description: Elimina un token de dispositivo para dejar de enviar notificaciones
+      operationId: eliminar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PeticionEliminar"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/calendario/eventos:
+    get:
+      tags:
+      - evento-calendario-controller
+      summary: Listar eventos
+      description: Devuelve los eventos del calendario con filtros opcionales
+      operationId: list
+      parameters:
+      - name: desde
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: tipo
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelEventoCalendarioModel"
+    post:
+      tags:
+      - evento-calendario-controller
+      summary: Crear evento
+      description: Crea un nuevo evento en el calendario
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventoCalendarioRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventoCalendarioModel"
+  /api/usuarios/{id}:
+    get:
+      tags:
+      - usuario-controller
+      operationId: obtenerUsuarioPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+    patch:
+      tags:
+      - usuario-controller
+      operationId: actualizarUsuario
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActualizarUsuarioRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+  /api/usuarios/{id}/estado:
+    patch:
+      tags:
+      - usuario-controller
+      operationId: actualizarEstado
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+  /api/usuarios/me:
+    get:
+      tags:
+      - usuario-controller
+      summary: Obtener mi perfil
+      description: Devuelve el perfil completo del usuario autenticado con links HATEOAS
+      operationId: obtenerUsuarioActual
+      responses:
+        "401":
+          description: No autenticado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "404":
+          description: Usuario no encontrado en la base de datos
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "200":
+          description: Perfil obtenido exitosamente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+    patch:
+      tags:
+      - usuario-controller
+      summary: Actualizar mi perfil
+      description: Permite al usuario actualizar su propia información de perfil
+      operationId: actualizarMiPerfil
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActualizarPerfilRequest"
+        required: true
+      responses:
+        "401":
+          description: No autenticado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "404":
+          description: Usuario no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "200":
+          description: Perfil actualizado exitosamente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+        "400":
+          description: Datos de entrada inválidos
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioModel"
+  /api:
+    get:
+      tags:
+      - usuarios-api-root-controller
+      summary: Raíz de la API
+      description: Devuelve links HATEOAS dinámicos según el usuario autenticado y
+        sus permisos
+      operationId: raiz
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ModeloRaizApi"
+  /api/usuarios:
+    get:
+      tags:
+      - usuario-controller
+      summary: Listar usuarios
+      description: Lista todos los usuarios del sistema (solo ADMIN)
+      operationId: listarUsuarios
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+        "403":
+          description: Sin permisos de administrador
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+  /api/usuarios/por-rol/{rol}:
+    get:
+      tags:
+      - usuario-controller
+      operationId: listarUsuariosPorRol
+      parameters:
+      - name: rol
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+  /api/usuarios/estadisticas:
+    get:
+      tags:
+      - usuario-controller
+      operationId: obtenerEstadisticas
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EstadisticasUsuarios"
+  /api/usuarios/dirigentes:
+    get:
+      tags:
+      - usuario-controller
+      operationId: listarDirigentes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+  /api/usuarios/busqueda:
+    get:
+      tags:
+      - usuario-controller
+      operationId: buscarUsuarios
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+  /api/usuarios/acampantes:
+    get:
+      tags:
+      - usuario-controller
+      operationId: listarAcampantes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelUsuarioModel"
+  /api/roles:
+    get:
+      tags:
+      - rol-usuario-controller
+      summary: Listar roles
+      description: Devuelve todos los roles disponibles en el sistema CAS
+      operationId: listarRoles
+      responses:
+        "200":
+          description: Lista de roles obtenida exitosamente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelRolUsuarioModel"
+  /api/roles/{rol}:
+    get:
+      tags:
+      - rol-usuario-controller
+      summary: Obtener rol
+      description: Devuelve información detallada de un rol específico
+      operationId: obtenerRolPorNombre
+      parameters:
+      - name: rol
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "404":
+          description: Rol no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RolUsuarioModel"
+        "200":
+          description: Rol obtenido exitosamente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RolUsuarioModel"
+  /api/pagos:
+    get:
+      tags:
+      - pagos-api-root-controller
+      summary: Raíz de pagos
+      description: Punto de entrada HATEOAS para explorar pagos
+      operationId: root
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RepresentationModelObject"
+  /api/pagos/planes:
+    get:
+      tags:
+      - plan-pago-controller
+      summary: Listar planes de pago
+      description: Devuelve los planes disponibles para el año en curso
+      operationId: list_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelPlanPagoModel"
+  /api/pagos/inscripciones/{id}/cuotas:
+    get:
+      tags:
+      - inscripcion-controller
+      summary: Listar cuotas
+      description: Devuelve el cronograma de cuotas de una inscripción
+      operationId: installments
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelCuotaModel"
+  /api/calendario:
+    get:
+      tags:
+      - calendario-api-root-controller
+      summary: Raíz del calendario
+      description: Punto de entrada HATEOAS para explorar el calendario
+      operationId: root_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RepresentationModelObject"
+  /api/calendario/tipos:
+    get:
+      tags:
+      - calendario-api-root-controller
+      summary: Tipos de evento
+      description: Catálogo de tipos de evento disponibles
+      operationId: eventTypes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CollectionModelTipoEventoModel"
+components:
+  schemas:
+    EventoCalendarioRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 200
+          minLength: 0
+        descripcion:
+          type: string
+        tipo:
+          type: string
+        fechaInicio:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+          maxLength: 255
+          minLength: 0
+        participantes:
+          type: array
+          items:
+            type: string
+      required:
+      - fechaFin
+      - fechaInicio
+      - tipo
+      - titulo
+    EventoCalendarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        tipo:
+          type: string
+        fechaInicio:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+        participantes:
+          type: array
+          items:
+            type: string
+        fechaCreacion:
+          type: string
+          format: date-time
+        fechaActualizacion:
+          type: string
+          format: date-time
+    Link:
+      type: object
+      properties:
+        rel:
+          type: string
+        href:
+          type: string
+        hreflang:
+          type: string
+        media:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        deprecation:
+          type: string
+        profile:
+          type: string
+        name:
+          type: string
+    UsuarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        id:
+          type: integer
+          format: int64
+        firebaseUid:
+          type: string
+        email:
+          type: string
+        nombreMostrar:
+          type: string
+        urlFoto:
+          type: string
+        emailVerificado:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        estado:
+          type: string
+        fechaCreacion:
+          type: string
+          format: date-time
+        ultimoLogin:
+          type: string
+          format: date-time
+        telefono:
+          type: string
+        dni:
+          type: string
+        fechaNacimiento:
+          type: string
+          format: date
+        direccion:
+          type: string
+        localidad:
+          type: string
+        grupoSanguineo:
+          type: string
+        factorRh:
+          type: string
+        perfilCompleto:
+          type: boolean
+    IntencionPagoRequest:
+      type: object
+      properties:
+        idInscripcion:
+          type: integer
+          format: int64
+        idsCuotas:
+          type: array
+          items:
+            type: integer
+            format: int64
+        metodo:
+          type: string
+          enum:
+          - EFECTIVO
+          - MERCADOPAGO
+      required:
+      - idInscripcion
+      - idsCuotas
+      - metodo
+    IntencionPagoResponse:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        id:
+          type: integer
+          format: int64
+        idInscripcion:
+          type: integer
+          format: int64
+        estado:
+          type: string
+          enum:
+          - PENDIENTE
+          - APROBADO
+          - RECHAZADO
+          - EXPIRADO
+          - REEMBOLSADO
+        urlRedireccion:
+          type: string
+    InscripcionRequest:
+      type: object
+      properties:
+        idUsuario:
+          type: string
+        codigoPlan:
+          type: string
+        mesInicio:
+          type: string
+          enum:
+          - JANUARY
+          - FEBRUARY
+          - MARCH
+          - APRIL
+          - MAY
+          - JUNE
+          - JULY
+          - AUGUST
+          - SEPTEMBER
+          - OCTOBER
+          - NOVEMBER
+          - DECEMBER
+        cuotasDeseadas:
+          type: integer
+          format: int32
+          maximum: 12
+          minimum: 2
+      required:
+      - codigoPlan
+      - idUsuario
+      - mesInicio
+    CuotaModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        id:
+          type: integer
+          format: int64
+        secuencia:
+          type: integer
+          format: int32
+        fechaVencimiento:
+          type: string
+          format: date
+        monto:
+          type: number
+        estado:
+          type: string
+    InscripcionResponse:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        idInscripcion:
+          type: integer
+          format: int64
+        cuotas:
+          type: array
+          items:
+            $ref: "#/components/schemas/CuotaModel"
+    MpItemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        unitPrice:
+          type: number
+          format: double
+    MpPreferenceRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MpItemRequest"
+        successUrl:
+          type: string
+        failureUrl:
+          type: string
+        pendingUrl:
+          type: string
+    MpPreferenceResponse:
+      type: object
+      properties:
+        preferenceId:
+          type: string
+        initPoint:
+          type: string
+    PeticionRegistro:
+      type: object
+      properties:
+        token:
+          type: string
+        userId:
+          type: string
+        platform:
+          type: string
+      required:
+      - token
+    ActualizarUsuarioRequest:
+      type: object
+      properties:
+        telefono:
+          type: string
+          pattern: "^\\+?[0-9]{8,15}$"
+        notasInternas:
+          type: string
+          maxLength: 1000
+          minLength: 0
+    ActualizarPerfilRequest:
+      type: object
+      description: Datos para actualizar el perfil personal
+      properties:
+        telefono:
+          type: string
+          description: Número de teléfono
+          example: +54 9 11 1234-5678
+          maxLength: 50
+          minLength: 0
+        direccion:
+          type: string
+          description: Dirección
+          example: "Av. Rivadavia 1234, Piso 3, Depto B"
+          maxLength: 255
+          minLength: 0
+        localidad:
+          type: string
+          description: Localidad
+          example: Ciudad Autónoma de Buenos Aires
+          maxLength: 100
+          minLength: 0
+        fechaNacimiento:
+          type: string
+          format: date
+          description: Fecha de nacimiento
+          example: 1990-05-15
+        dni:
+          type: string
+          description: DNI (solo números)
+          example: 30123456
+          pattern: "^[0-9]{7,8}$"
+        grupoSanguineo:
+          type: string
+          description: Grupo sanguíneo
+          example: A
+          pattern: ^(A|B|AB|0)$
+        factorRh:
+          type: string
+          description: Factor Rh
+          example: "+"
+          pattern: "^[+-]$"
+    ModeloRaizApi:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        mensaje:
+          type: string
+        emailUsuario:
+          type: string
+        nombreUsuario:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        perfilCompleto:
+          type: boolean
+    CollectionModelUsuarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsuarioModel"
+    EstadisticasUsuarios:
+      type: object
+      properties:
+        totalUsuarios:
+          type: integer
+          format: int64
+        usuariosActivos:
+          type: integer
+          format: int64
+        administradores:
+          type: integer
+          format: int64
+        dirigentes:
+          type: integer
+          format: int64
+        padres:
+          type: integer
+          format: int64
+    CollectionModelRolUsuarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/RolUsuarioModel"
+    RolUsuarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        nombre:
+          type: string
+        nombreMostrar:
+          type: string
+        descripcion:
+          type: string
+    RepresentationModelObject:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+    CollectionModelPlanPagoModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanPagoModel"
+    PlanPagoModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        codigo:
+          type: string
+        nombre:
+          type: string
+        anio:
+          type: integer
+          format: int32
+        montoTotal:
+          type: number
+        minCuotas:
+          type: integer
+          format: int32
+        maxCuotas:
+          type: integer
+          format: int32
+        mesInicio:
+          type: string
+          enum:
+          - JANUARY
+          - FEBRUARY
+          - MARCH
+          - APRIL
+          - MAY
+          - JUNE
+          - JULY
+          - AUGUST
+          - SEPTEMBER
+          - OCTOBER
+          - NOVEMBER
+          - DECEMBER
+        mesFin:
+          type: string
+          enum:
+          - JANUARY
+          - FEBRUARY
+          - MARCH
+          - APRIL
+          - MAY
+          - JUNE
+          - JULY
+          - AUGUST
+          - SEPTEMBER
+          - OCTOBER
+          - NOVEMBER
+          - DECEMBER
+        activo:
+          type: boolean
+    CollectionModelCuotaModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CuotaModel"
+    CollectionModelTipoEventoModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/TipoEventoModel"
+    TipoEventoModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        codigo:
+          type: string
+        etiqueta:
+          type: string
+    CollectionModelEventoCalendarioModel:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventoCalendarioModel"
+    PeticionEliminar:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+  securitySchemes:
+    FirebaseJWT:
+      type: http
+      description: |
+        Token JWT de Firebase Authentication.
+
+        Para obtener el token desde la consola del navegador en la app frontend:
+        ```javascript
+        const token = await firebase.auth().currentUser.getIdToken();
+        console.log(token);
+        ```
+      scheme: bearer
+      bearerFormat: JWT

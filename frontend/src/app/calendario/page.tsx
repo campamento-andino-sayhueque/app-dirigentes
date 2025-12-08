@@ -12,6 +12,8 @@ import { CalendarioLegend } from "./components/CalendarioLegend";
 import { EventoDetailModal } from "./components/EventoDetailModal";
 import { EventoFormModal } from "./components/EventoFormModal";
 import { calendarioStore, calendarioActions } from "@/stores/calendario.store";
+import { ApiError } from "@/lib/api/api-client";
+import { toast } from "sonner";
 
 export default function CalendarioPage() {
   // TanStack Store hooks
@@ -36,17 +38,18 @@ export default function CalendarioPage() {
   // Manejar creación de evento
   const handleCreateEvento = async (data: Partial<EventoCalendarioRequest>) => {
     if (!data.titulo || !data.fechaInicio || !data.fechaFin) {
-      alert("Por favor completa los campos requeridos");
+      toast.error("Por favor completa los campos requeridos");
       return;
     }
 
     try {
       await createEvento(data as EventoCalendarioRequest);
       calendarioActions.closeFormModal();
-      // No need to reset manually as closeFormModal handles it
+      toast.success("Evento creado exitosamente");
     } catch (error) {
       console.error("Error al crear evento:", error);
-      alert("Error al crear el evento");
+      const message = error instanceof ApiError ? error.message : "Error al crear el evento";
+      toast.error(message);
     }
   };
 
@@ -57,9 +60,11 @@ export default function CalendarioPage() {
     try {
       await updateEvento(Number(selectedEvent.id), data as EventoCalendarioRequest);
       calendarioActions.closeFormModal();
+      toast.success("Evento actualizado exitosamente");
     } catch (error) {
       console.error("Error al actualizar evento:", error);
-      alert("Error al actualizar el evento");
+      const message = error instanceof ApiError ? error.message : "Error al actualizar el evento";
+      toast.error(message);
     }
   };
 
@@ -71,9 +76,11 @@ export default function CalendarioPage() {
       try {
         await deleteEvento(Number(selectedEvent.id));
         calendarioActions.closeDetailModal();
+        toast.success("Evento eliminado exitosamente");
       } catch (error) {
         console.error("Error al eliminar evento:", error);
-        alert("Error al eliminar el evento");
+        const message = error instanceof ApiError ? error.message : "Error al eliminar el evento";
+        toast.error(message);
       }
     }
   };

@@ -7,6 +7,7 @@ import MobileFooter from "@/components/MobileFooter";
 import MobileHeader from "@/components/MobileHeader";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full">
+    <html lang="es" className="h-full" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
@@ -68,6 +69,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <RegisterServiceWorker />
+              <Toaster richColors position="top-center" />
               {/* Estructura con Grid Layout - sin spacers huérfanos */}
               <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
                 {/* Header Mobile - solo visible en móviles */}
