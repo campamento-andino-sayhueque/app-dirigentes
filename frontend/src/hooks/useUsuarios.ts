@@ -5,34 +5,27 @@
  */
 
 import { useMemo } from 'react';
-import { useApi, useMutation } from './useApi';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usuarioService } from '@/lib/api/usuario.service';
 import { UsuarioModel, ActualizarPerfilRequest } from '@/lib/api/types';
+import { ApiResult, ApiError, fetchOrThrow } from '@/lib/api/api-client';
 
 /**
  * Hook para obtener el perfil del usuario actual
- * 
- * @example
- * ```typescript
- * const { usuario, loading, error, refetch } = useUsuarioActual();
- * 
- * if (loading) return <Spinner />;
- * if (error) return <Error message={error.message} />;
- * 
- * return <div>Hola, {usuario?.nombreMostrar}</div>;
- * ```
  */
 export function useUsuarioActual() {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.getMe(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['me'],
+    queryFn: () => fetchOrThrow(usuarioService.getMe())
+  });
+
+  const data = query.data;
 
   return {
     usuario: data,
-    loading,
-    error,
-    refetch,
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch,
     // Helpers
     isAdmin: data?.roles.includes('ADMIN') ?? false,
     isDirigente: data?.roles.includes('DIRIGENTE') ?? false,
@@ -45,16 +38,20 @@ export function useUsuarioActual() {
  * Hook para actualizar el perfil del usuario actual
  */
 export function useActualizarPerfil() {
-  const { mutate, loading, error, data, reset } = useMutation(
-    (data: ActualizarPerfilRequest) => usuarioService.updateMyProfile(data)
-  );
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (data: ActualizarPerfilRequest) => fetchOrThrow(usuarioService.updateMyProfile(data)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    }
+  });
 
   return {
-    actualizarPerfil: mutate,
-    loading,
-    error,
-    usuarioActualizado: data,
-    reset
+    actualizarPerfil: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    usuarioActualizado: mutation.data,
+    reset: mutation.reset
   };
 }
 
@@ -62,21 +59,21 @@ export function useActualizarPerfil() {
  * Hook para listar usuarios (solo admin)
  */
 export function useUsuarios() {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.listAll(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => fetchOrThrow(usuarioService.listAll())
+  });
 
   const usuarios = useMemo(() => {
-    if (!data) return [];
-    return usuarioService.extractUsers(data);
-  }, [data]);
+    if (!query.data) return [];
+    return usuarioService.extractUsers({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     usuarios,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -84,21 +81,21 @@ export function useUsuarios() {
  * Hook para listar dirigentes
  */
 export function useDirigentes() {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.listDirigentes(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['dirigentes'],
+    queryFn: () => fetchOrThrow(usuarioService.listDirigentes())
+  });
 
   const dirigentes = useMemo(() => {
-    if (!data) return [];
-    return usuarioService.extractUsers(data);
-  }, [data]);
+    if (!query.data) return [];
+    return usuarioService.extractUsers({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     dirigentes,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -106,46 +103,44 @@ export function useDirigentes() {
  * Hook para listar acampantes
  */
 export function useAcampantes() {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.listAcampantes(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['acampantes'],
+    queryFn: () => fetchOrThrow(usuarioService.listAcampantes())
+  });
 
   const acampantes = useMemo(() => {
-    if (!data) return [];
-    return usuarioService.extractUsers(data);
-  }, [data]);
+    if (!query.data) return [];
+    return usuarioService.extractUsers({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     acampantes,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
 /**
  * Hook para buscar usuarios
  */
-export function useBuscarUsuarios(query: string) {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.search(query),
-    { 
-      immediate: query.length >= 2,
-      deps: [query]
-    }
-  );
+export function useBuscarUsuarios(queryStr: string) {
+  const query = useQuery({
+    queryKey: ['usuarios', 'search', queryStr],
+    queryFn: () => fetchOrThrow(usuarioService.search(queryStr)),
+    enabled: queryStr.length >= 2
+  });
 
   const usuarios = useMemo(() => {
-    if (!data) return [];
-    return usuarioService.extractUsers(data);
-  }, [data]);
+    if (!query.data) return [];
+    return usuarioService.extractUsers({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     usuarios,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -153,19 +148,19 @@ export function useBuscarUsuarios(query: string) {
  * Hook para obtener un usuario por ID
  */
 export function useUsuario(id: number | null) {
-  const { data, loading, error, refetch } = useApi(
-    () => id !== null ? usuarioService.getById(id) : Promise.resolve({ data: undefined }),
-    { 
-      immediate: id !== null,
-      deps: [id]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['usuario', id],
+    queryFn: () => id !== null 
+      ? fetchOrThrow(usuarioService.getById(id)) 
+      : Promise.resolve(null),
+    enabled: id !== null
+  });
 
   return {
-    usuario: data,
-    loading,
-    error,
-    refetch
+    usuario: query.data,
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -173,16 +168,16 @@ export function useUsuario(id: number | null) {
  * Hook para obtener estadísticas de usuarios (solo admin)
  */
 export function useEstadisticasUsuarios() {
-  const { data, loading, error, refetch } = useApi(
-    () => usuarioService.getStatistics(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['usuarios', 'estadisticas'],
+    queryFn: () => fetchOrThrow(usuarioService.getStatistics())
+  });
 
   return {
-    estadisticas: data,
-    loading,
-    error,
-    refetch
+    estadisticas: query.data,
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -190,20 +185,20 @@ export function useEstadisticasUsuarios() {
  * Hook para listar roles disponibles
  */
 export function useRoles() {
-  const { data, loading, error } = useApi(
-    () => usuarioService.listRoles(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => fetchOrThrow(usuarioService.listRoles())
+  });
 
   const roles = useMemo(() => {
-    if (!data) return [];
-    return usuarioService.extractRoles(data);
-  }, [data]);
+    if (!query.data) return [];
+    return usuarioService.extractRoles({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     roles,
-    loading,
-    error
+    loading: query.isLoading,
+    error: query.error as ApiError
   };
 }
 
@@ -211,21 +206,31 @@ export function useRoles() {
  * Hook para asignar/remover roles (solo admin)
  */
 export function useGestionRoles() {
-  const { mutate: assignMutate, loading: assignLoading, error: assignError } = useMutation(
-    ({ userId, rol }: { userId: number; rol: string }) => 
-      usuarioService.assignRole(userId, rol)
-  );
+  const queryClient = useQueryClient();
 
-  const { mutate: removeMutate, loading: removeLoading, error: removeError } = useMutation(
-    ({ userId, rol }: { userId: number; rol: string }) => 
-      usuarioService.removeRole(userId, rol)
-  );
+  const assignMutation = useMutation({
+    mutationFn: ({ userId, rol }: { userId: number; rol: string }) => 
+      fetchOrThrow(usuarioService.assignRole(userId, rol)),
+    onSuccess: (data, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['usuario', variables.userId] });
+        queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    }
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: ({ userId, rol }: { userId: number; rol: string }) => 
+      fetchOrThrow(usuarioService.removeRole(userId, rol)),
+    onSuccess: (data, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['usuario', variables.userId] });
+        queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    }
+  });
 
   return {
-    assignRole: (userId: number, rol: string) => assignMutate({ userId, rol }),
-    removeRole: (userId: number, rol: string) => removeMutate({ userId, rol }),
-    loading: assignLoading || removeLoading,
-    error: assignError || removeError
+    assignRole: (userId: number, rol: string) => assignMutation.mutateAsync({ userId, rol }),
+    removeRole: (userId: number, rol: string) => removeMutation.mutateAsync({ userId, rol }),
+    loading: assignMutation.isPending || removeMutation.isPending,
+    error: (assignMutation.error || removeMutation.error) as ApiError
   };
 }
 
@@ -233,14 +238,20 @@ export function useGestionRoles() {
  * Hook para actualizar estado de usuario (solo admin)
  */
 export function useActualizarEstadoUsuario() {
-  const { mutate, loading, error } = useMutation(
-    ({ userId, estado }: { userId: number; estado: string }) => 
-      usuarioService.updateStatus(userId, estado)
-  );
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({ userId, estado }: { userId: number; estado: string }) => 
+      fetchOrThrow(usuarioService.updateStatus(userId, estado)),
+    onSuccess: (data, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['usuario', variables.userId] });
+        queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    }
+  });
 
   return {
-    actualizarEstado: (userId: number, estado: string) => mutate({ userId, estado }),
-    loading,
-    error
+    actualizarEstado: (userId: number, estado: string) => mutation.mutateAsync({ userId, estado }),
+    loading: mutation.isPending,
+    error: mutation.error as ApiError
   };
 }

@@ -4,7 +4,7 @@
  * Gestiona los tokens de dispositivo para push notifications.
  */
 
-import { hateoasClient, ApiResult } from './hateoas-client';
+import { apiClient, ApiResult } from './api-client';
 import { TokenDispositivoRequest } from './types';
 
 /**
@@ -16,14 +16,14 @@ export const notificacionesService = {
    */
   async registerDeviceToken(token: string, platform?: string): Promise<ApiResult<void>> {
     const data: TokenDispositivoRequest = { token, platform };
-    return hateoasClient.post<void>('/api/device-tokens', data);
+    return apiClient.post('/api/notificaciones/registrar-dispositivo', data);
   },
 
   /**
    * Elimina un token de dispositivo (al hacer logout, por ejemplo)
    */
   async unregisterDeviceToken(token: string): Promise<ApiResult<void>> {
-    return hateoasClient.delete(`/api/device-tokens?token=${encodeURIComponent(token)}`);
+    return apiClient.delete(`/api/device-tokens?token=${encodeURIComponent(token)}`);
   },
 
   /**

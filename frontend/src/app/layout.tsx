@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import QueryProvider from "@/lib/providers/QueryProvider";
 import MobileFooter from "@/components/MobileFooter";
 import MobileHeader from "@/components/MobileHeader";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,20 +60,29 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         <AuthProvider>
-          <RegisterServiceWorker />
-          {/* Estructura con Grid Layout - sin spacers huérfanos */}
-          <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
-            {/* Header Mobile - solo visible en móviles */}
-            <MobileHeader />
-            
-            {/* Header Desktop - parte del flujo del grid */}
-            <MobileFooter />
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <RegisterServiceWorker />
+              {/* Estructura con Grid Layout - sin spacers huérfanos */}
+              <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
+                {/* Header Mobile - solo visible en móviles */}
+                <MobileHeader />
+                
+                {/* Header Desktop - parte del flujo del grid */}
+                <MobileFooter />
 
-            {/* Contenido principal - ocupa el espacio restante (1fr) */}
-            <main className="overflow-auto">{children}</main>
+                {/* Contenido principal - ocupa el espacio restante (1fr) */}
+                <main className="overflow-auto">{children}</main>
 
-            {/* Footer Mobile se maneja dentro de MobileFooter con fixed positioning */}
-          </div>
+                {/* Footer Mobile se maneja dentro de MobileFooter con fixed positioning */}
+              </div>
+            </ThemeProvider>
+          </QueryProvider>
         </AuthProvider>
       </body>
     </html>

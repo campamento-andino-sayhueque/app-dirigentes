@@ -5,34 +5,30 @@
  */
 
 import { useMemo } from 'react';
-import { useApi, useMutation } from './useApi';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pagosService } from '@/lib/api/pagos.service';
 import { InscripcionRequest, IntencionPagoRequest } from '@/lib/api/types';
+import { ApiResult, ApiError, fetchOrThrow } from '@/lib/api/api-client';
 
 /**
  * Hook para listar planes de pago disponibles
- * 
- * @example
- * ```typescript
- * const { planes, loading, error } = usePlanesPage();
- * ```
  */
 export function usePlanesPago() {
-  const { data, loading, error, refetch } = useApi(
-    () => pagosService.listPlanes(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['planesPago'],
+    queryFn: () => fetchOrThrow(pagosService.listPlanes())
+  });
 
   const planes = useMemo(() => {
-    if (!data) return [];
-    return pagosService.extractPlanes(data);
-  }, [data]);
+    if (!query.data) return [];
+    return pagosService.extractPlanes({ data: query.data } as any);
+  }, [query.data]);
 
   return {
     planes,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -40,20 +36,21 @@ export function usePlanesPago() {
  * Hook para obtener las cuotas de una inscripción
  */
 export function useCuotasInscripcion(inscripcionId: number | null) {
-  const { data, loading, error, refetch } = useApi(
-    () => inscripcionId !== null 
-      ? pagosService.getCuotasInscripcion(inscripcionId) 
-      : Promise.resolve({ data: undefined }),
-    { 
-      immediate: inscripcionId !== null,
-      deps: [inscripcionId]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['cuotas', inscripcionId],
+    queryFn: () => inscripcionId !== null 
+      ? fetchOrThrow(pagosService.getCuotasInscripcion(inscripcionId))
+      : Promise.resolve(null),
+    enabled: inscripcionId !== null
+  });
 
   const cuotas = useMemo(() => {
-    if (!data) return [];
-    return pagosService.extractCuotas(data);
-  }, [data]);
+    if (!query.data) return [];
+    // If it's empty data because inscripcionId is null, extractCuotas might fail if it expects data structure?
+    // extractCuotas checks for _embedded. 
+    // fetchOrThrow returns `result.data`. If result.data is undefined, it returns undefined.
+    return pagosService.extractCuotas({ data: query.data } as any);
+  }, [query.data]);
 
   // Calcular estadísticas de las cuotas
   const stats = useMemo(() => ({
@@ -67,9 +64,9 @@ export function useCuotasInscripcion(inscripcionId: number | null) {
   return {
     cuotas,
     ...stats,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -77,16 +74,16 @@ export function useCuotasInscripcion(inscripcionId: number | null) {
  * Hook para crear una inscripción
  */
 export function useCrearInscripcion() {
-  const { mutate, loading, error, data, reset } = useMutation(
-    (data: InscripcionRequest) => pagosService.createInscripcion(data)
-  );
+  const mutation = useMutation({
+    mutationFn: (data: InscripcionRequest) => fetchOrThrow(pagosService.createInscripcion(data))
+  });
 
   return {
-    crearInscripcion: mutate,
-    loading,
-    error,
-    inscripcion: data,
-    reset
+    crearInscripcion: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    inscripcion: mutation.data,
+    reset: mutation.reset
   };
 }
 
@@ -94,16 +91,16 @@ export function useCrearInscripcion() {
  * Hook para crear una intención de pago (checkout MercadoPago)
  */
 export function useCrearIntencionPago() {
-  const { mutate, loading, error, data, reset } = useMutation(
-    (data: IntencionPagoRequest) => pagosService.createIntencionPago(data)
-  );
+  const mutation = useMutation({
+    mutationFn: (data: IntencionPagoRequest) => fetchOrThrow(pagosService.createIntencionPago(data))
+  });
 
   return {
-    crearIntencion: mutate,
-    loading,
-    error,
-    intencion: data,
-    reset
+    crearIntencion: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    intencion: mutation.data,
+    reset: mutation.reset
   };
 }
 
@@ -112,9 +109,15 @@ export function useCrearIntencionPago() {
  * Maneja la creación de la intención y redirección a MercadoPago
  */
 export function usePagarCuota() {
-  const { mutate, loading, error, reset } = useMutation(
-    async ({ cuotaId, sandbox = false }: { cuotaId: number; sandbox?: boolean }) => {
+  const mutation = useMutation({
+    mutationFn: async ({ cuotaId, sandbox = false }: { cuotaId: number; sandbox?: boolean }) => {
+      // Here we don't strictly fetchOrThrow because we want the whole result potentially?
+      // No, we want to throw on error.
+      // pagosService.iniciarPagoCuota returns ApiResult<string>.
+      // fetchOrThrow guarantees data string.
       const result = await pagosService.iniciarPagoCuota(cuotaId, sandbox);
+      
+      if (result.error) throw result.error;
       
       if (result.data) {
         // Redirigir a MercadoPago
@@ -123,17 +126,17 @@ export function usePagarCuota() {
       
       return result;
     }
-  );
+  });
 
   const pagarCuota = (cuotaId: number, sandbox = false) => {
-    return mutate({ cuotaId, sandbox });
+    return mutation.mutateAsync({ cuotaId, sandbox });
   };
 
   return {
     pagarCuota,
-    loading,
-    error,
-    reset
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    reset: mutation.reset
   };
 }
 

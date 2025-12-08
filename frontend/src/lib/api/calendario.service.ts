@@ -5,7 +5,7 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { hateoasClient, ApiResult } from './hateoas-client';
+import { apiClient, ApiResult } from './api-client';
 import { 
   CalendarioRootResponse,
   EventoCalendarioModel, 
@@ -48,7 +48,14 @@ function toCalendarEvent(evento: EventoCalendarioModel): CalendarEventFormatted 
     start: new Date(evento.fechaInicio),
     end: new Date(evento.fechaFin),
     descripcion: evento.descripcion || '',
-    tipo: evento.tipo,
+    // Normalizar `tipo` que puede venir como string o como objeto { codigo, etiqueta, formato }
+    tipo: ((): string => {
+      const t: any = (evento as any).tipo;
+      if (!t && t !== "") return "";
+      if (typeof t === 'string') return t;
+      // si viene como objeto, preferir `formato`, luego `codigo`, luego `etiqueta`
+      return t.formato ?? t.codigo ?? t.etiqueta ?? String(t);
+    })(),
     ubicacion: evento.ubicacion,
     participantes: evento.participantes
   };
@@ -95,7 +102,7 @@ export const calendarioService = {
    * Descubre la API del calendario (punto de entrada)
    */
   async discover(): Promise<ApiResult<CalendarioRootResponse>> {
-    return hateoasClient.get<CalendarioRootResponse>('/api/calendario');
+    return apiClient.get<CalendarioRootResponse>('/api/calendario');
   },
 
   /**
@@ -103,42 +110,42 @@ export const calendarioService = {
    */
   async listEventos(filter: EventosFilter = {}): Promise<ApiResult<EventosCollection>> {
     const query = buildEventosQuery(filter);
-    return hateoasClient.get<EventosCollection>(`/api/calendario/eventos${query}`);
+    return apiClient.get<EventosCollection>(`/api/calendario/eventos${query}`);
   },
 
   /**
    * Obtiene un evento por ID
    */
   async getEvento(id: number): Promise<ApiResult<EventoCalendarioModel>> {
-    return hateoasClient.get<EventoCalendarioModel>(`/api/calendario/eventos/${id}`);
+    return apiClient.get<EventoCalendarioModel>(`/api/calendario/eventos/${id}`);
   },
 
   /**
    * Crea un nuevo evento (solo admin/dirigente)
    */
   async createEvento(evento: EventoCalendarioRequest): Promise<ApiResult<EventoCalendarioModel>> {
-    return hateoasClient.post<EventoCalendarioModel>('/api/calendario/eventos', evento);
+    return apiClient.post<EventoCalendarioModel>('/api/calendario/eventos', evento);
   },
 
   /**
    * Actualiza un evento existente (solo admin/dirigente)
    */
   async updateEvento(id: number, evento: EventoCalendarioRequest): Promise<ApiResult<EventoCalendarioModel>> {
-    return hateoasClient.put<EventoCalendarioModel>(`/api/calendario/eventos/${id}`, evento);
+    return apiClient.put<EventoCalendarioModel>(`/api/calendario/eventos/${id}`, evento);
   },
 
   /**
    * Elimina un evento (solo admin/dirigente)
    */
   async deleteEvento(id: number): Promise<ApiResult<void>> {
-    return hateoasClient.delete(`/api/calendario/eventos/${id}`);
+    return apiClient.delete(`/api/calendario/eventos/${id}`);
   },
 
   /**
    * Lista los tipos de evento disponibles
    */
   async listTiposEvento(): Promise<ApiResult<TiposEventoCollection>> {
-    return hateoasClient.get<TiposEventoCollection>('/api/calendario/tipos');
+    return apiClient.get<TiposEventoCollection>('/api/calendario/tipos');
   },
 
   /**
@@ -207,7 +214,14 @@ export const calendarioService = {
    * Extrae la lista de tipos de evento de una colección
    */
   extractTipos(collection: TiposEventoCollection): TipoEventoModel[] {
-    return collection._embedded?.tipoEventoModelList || [];
+    const tiposBackend = collection._embedded?.tipoEventoModelList || [];
+    return tiposBackend.map((tipo: any) => ({
+      // Preferir `formato` si el backend lo envía, si no usar `codigo`.
+      value: tipo.formato ?? tipo.codigo ?? String(tipo.formato ?? tipo.codigo ?? tipo.etiqueta ?? ''),
+      // Etiqueta para mostrar: preferir `etiqueta`, fallback a `codigo` o `formato`
+      label: tipo.etiqueta ?? tipo.codigo ?? tipo.formato ?? '',
+      _links: tipo._links
+    }));
   },
 
   /**

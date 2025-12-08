@@ -28,6 +28,7 @@ export default function MobileFooter() {
     { name: "Calendario", href: "/calendario", icon: Calendar, isCenter: true },
     { name: "Pagos", href: "/pagos", icon: CreditCard },
     { name: "Avisos", href: "/avisos", icon: Bell },
+    { name: "Perfil", href: "/perfil", icon: Users }, // Added Profile link explicitly
   ];
 
   return (

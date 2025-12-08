@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ApiResult, ApiError } from '@/lib/api/hateoas-client';
+import { ApiResult, ApiError } from '@/lib/api/api-client';
 
 /**
  * Estado de una llamada API

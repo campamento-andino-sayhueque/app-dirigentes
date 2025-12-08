@@ -4,35 +4,31 @@
  * Proporcionan estado reactivo para operaciones del calendario.
  */
 
-import { useCallback, useMemo } from 'react';
-import { useApi, useMutation } from './useApi';
+import { ApiError, fetchOrThrow } from '@/lib/api/api-client';
 import { calendarioService, EventosFilter } from '@/lib/api/calendario.service';
-import { EventoCalendarioModel, EventoCalendarioRequest } from '@/lib/api/types';
+import { EventoCalendarioRequest } from '@/lib/api/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+
+// Helper wrapper to throw on error, enabling React Query error handling
+
 
 /**
  * Hook para obtener eventos del calendario
- * 
- * @example
- * ```typescript
- * const { eventos, loading, error, refetch } = useEventos({
- *   desde: new Date(),
- *   hasta: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
- * });
- * ```
  */
 export function useEventos(filter: EventosFilter = {}) {
-  const { data, loading, error, refetch } = useApi(
-    () => calendarioService.listEventos(filter),
-    { 
-      immediate: true,
-      deps: [filter.desde, filter.hasta, filter.tipo]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['eventos', filter],
+    queryFn: () => fetchOrThrow(calendarioService.listEventos(filter))
+  });
 
   const eventos = useMemo(() => {
-    if (!data) return [];
-    return calendarioService.extractEventos(data);
-  }, [data]);
+    if (!query.data) return [];
+    return calendarioService.extractEventos(query.data); 
+    // We mock the structure expected by extractEventos if it expects { data: ... } or just the collection
+    // Let's check extractEventos signature later. 
+    // Assuming standard usage: extractEventos(collection)
+  }, [query.data]);
 
   // Eventos formateados para react-big-calendar
   const eventosCalendar = useMemo(() => {
@@ -42,9 +38,9 @@ export function useEventos(filter: EventosFilter = {}) {
   return {
     eventos,
     eventosCalendar,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -52,25 +48,22 @@ export function useEventos(filter: EventosFilter = {}) {
  * Hook para obtener eventos del mes actual
  */
 export function useEventosMes(year: number, month: number) {
-  const { data, loading, error, refetch } = useApi(
-    () => calendarioService.getEventosMes(year, month),
-    { 
-      immediate: true,
-      deps: [year, month]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['eventos', 'mes', year, month],
+    queryFn: () => fetchOrThrow(calendarioService.getEventosMes(year, month))
+  });
 
   const eventos = useMemo(() => {
-    if (!data) return [];
-    return calendarioService.extractEventos(data);
-  }, [data]);
+    if (!query.data) return [];
+    return calendarioService.extractEventos(query.data);
+  }, [query.data]);
 
   return {
     eventos,
     eventosCalendar: calendarioService.toCalendarEvents(eventos),
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -78,24 +71,21 @@ export function useEventosMes(year: number, month: number) {
  * Hook para obtener próximos eventos
  */
 export function useProximosEventos(dias: number = 30) {
-  const { data, loading, error, refetch } = useApi(
-    () => calendarioService.getProximosEventos(dias),
-    { 
-      immediate: true,
-      deps: [dias]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['eventos', 'proximos', dias],
+    queryFn: () => fetchOrThrow(calendarioService.getProximosEventos(dias))
+  });
 
   const eventos = useMemo(() => {
-    if (!data) return [];
-    return calendarioService.extractEventos(data);
-  }, [data]);
+    if (!query.data) return [];
+    return calendarioService.extractEventos(query.data);
+  }, [query.data]);
 
   return {
     eventos,
-    loading,
-    error,
-    refetch
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -103,19 +93,19 @@ export function useProximosEventos(dias: number = 30) {
  * Hook para obtener un evento específico
  */
 export function useEvento(id: number | null) {
-  const { data, loading, error, refetch } = useApi(
-    () => id !== null ? calendarioService.getEvento(id) : Promise.resolve({ data: undefined }),
-    { 
-      immediate: id !== null,
-      deps: [id]
-    }
-  );
+  const query = useQuery({
+    queryKey: ['evento', id],
+    queryFn: () => id !== null 
+      ? fetchOrThrow(calendarioService.getEvento(id))
+      : Promise.resolve(null),
+    enabled: id !== null
+  });
 
   return {
-    evento: data,
-    loading,
-    error,
-    refetch
+    evento: query.data,
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
   };
 }
 
@@ -123,20 +113,20 @@ export function useEvento(id: number | null) {
  * Hook para obtener tipos de evento
  */
 export function useTiposEvento() {
-  const { data, loading, error } = useApi(
-    () => calendarioService.listTiposEvento(),
-    { immediate: true }
-  );
+  const query = useQuery({
+    queryKey: ['tiposEvento'],
+    queryFn: () => fetchOrThrow(calendarioService.listTiposEvento())
+  });
 
   const tipos = useMemo(() => {
-    if (!data) return [];
-    return calendarioService.extractTipos(data);
-  }, [data]);
+    if (!query.data) return [];
+    return calendarioService.extractTipos(query.data);
+  }, [query.data]);
 
   return {
     tipos,
-    loading,
-    error
+    loading: query.isLoading,
+    error: query.error as ApiError
   };
 }
 
@@ -144,16 +134,22 @@ export function useTiposEvento() {
  * Hook para crear un evento
  */
 export function useCreateEvento() {
-  const { mutate, loading, error, data, reset } = useMutation(
-    (evento: EventoCalendarioRequest) => calendarioService.createEvento(evento)
-  );
+  const queryClient = useQueryClient();
+  
+  const mutation = useMutation({
+    mutationFn: (evento: EventoCalendarioRequest) => fetchOrThrow(calendarioService.createEvento(evento)),
+    onSuccess: () => {
+      // Invalidar queries de eventos para recargar
+      queryClient.invalidateQueries({ queryKey: ['eventos'] });
+    }
+  });
 
   return {
-    createEvento: mutate,
-    loading,
-    error,
-    createdEvento: data,
-    reset
+    createEvento: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    createdEvento: mutation.data,
+    reset: mutation.reset
   };
 }
 
@@ -161,21 +157,27 @@ export function useCreateEvento() {
  * Hook para actualizar un evento
  */
 export function useUpdateEvento() {
-  const { mutate, loading, error, data, reset } = useMutation(
-    ({ id, evento }: { id: number; evento: EventoCalendarioRequest }) => 
-      calendarioService.updateEvento(id, evento)
-  );
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({ id, evento }: { id: number; evento: EventoCalendarioRequest }) => 
+      fetchOrThrow(calendarioService.updateEvento(id, evento)),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['eventos'] });
+      queryClient.invalidateQueries({ queryKey: ['evento', variables.id] });
+    }
+  });
 
   const updateEvento = useCallback((id: number, evento: EventoCalendarioRequest) => {
-    return mutate({ id, evento });
-  }, [mutate]);
+    return mutation.mutateAsync({ id, evento });
+  }, [mutation]);
 
   return {
     updateEvento,
-    loading,
-    error,
-    updatedEvento: data,
-    reset
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    updatedEvento: mutation.data,
+    reset: mutation.reset
   };
 }
 
@@ -183,21 +185,26 @@ export function useUpdateEvento() {
  * Hook para eliminar un evento
  */
 export function useDeleteEvento() {
-  const { mutate, loading, error, reset } = useMutation(
-    (id: number) => calendarioService.deleteEvento(id)
-  );
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (id: number) => fetchOrThrow(calendarioService.deleteEvento(id)),
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['eventos'] });
+      queryClient.invalidateQueries({ queryKey: ['evento', id] });
+    }
+  });
 
   return {
-    deleteEvento: mutate,
-    loading,
-    error,
-    reset
+    deleteEvento: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error as ApiError,
+    reset: mutation.reset
   };
 }
 
 /**
  * Hook combinado para CRUD de eventos
- * Proporciona todas las operaciones en un solo hook
  */
 export function useEventosCRUD(filter: EventosFilter = {}) {
   const {

@@ -29,6 +29,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Bypass auth for E2E testing
+    if (typeof window !== 'undefined' && localStorage.getItem('E2E_TEST_USER')) {
+      console.log('Using E2E Test User Bypass');
+      setUser({
+        uid: 'e2e-test-user',
+        email: 'test@cas.com',
+        displayName: 'Test User',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => 'mock-token',
+        getIdTokenResult: async () => ({} as any),
+        reload: async () => {},
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: 'firebase', // Added required property
+      } as unknown as User); // Correct casting
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);

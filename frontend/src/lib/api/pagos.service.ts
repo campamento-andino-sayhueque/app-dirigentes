@@ -5,7 +5,7 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { hateoasClient, ApiResult } from './hateoas-client';
+import { apiClient, ApiResult } from './api-client';
 import { 
   PagosRootResponse,
   PlanPagoModel, 
@@ -26,7 +26,7 @@ export const pagosService = {
    * Descubre la API de pagos (punto de entrada)
    */
   async discover(): Promise<ApiResult<PagosRootResponse>> {
-    return hateoasClient.get<PagosRootResponse>('/api/pagos');
+    return apiClient.get<PagosRootResponse>('/api/pagos');
   },
 
   // ============================================
@@ -37,14 +37,14 @@ export const pagosService = {
    * Lista todos los planes de pago disponibles
    */
   async listPlanes(): Promise<ApiResult<PlanesCollection>> {
-    return hateoasClient.get<PlanesCollection>('/api/pagos/planes');
+    return apiClient.get<PlanesCollection>('/api/pagos/planes');
   },
 
   /**
    * Obtiene un plan de pago por ID
    */
   async getPlan(id: number): Promise<ApiResult<PlanPagoModel>> {
-    return hateoasClient.get<PlanPagoModel>(`/api/pagos/planes/${id}`);
+    return apiClient.get<PlanPagoModel>(`/api/pagos/planes/${id}`);
   },
 
   // ============================================
@@ -55,14 +55,14 @@ export const pagosService = {
    * Crea una nueva inscripción
    */
   async createInscripcion(data: InscripcionRequest): Promise<ApiResult<InscripcionResponse>> {
-    return hateoasClient.post<InscripcionResponse>('/api/pagos/inscripciones', data);
+    return apiClient.post<InscripcionResponse>('/api/pagos/inscripciones', data);
   },
 
   /**
    * Obtiene las cuotas de una inscripción
    */
   async getCuotasInscripcion(inscripcionId: number): Promise<ApiResult<CuotasCollection>> {
-    return hateoasClient.get<CuotasCollection>(`/api/pagos/inscripciones/${inscripcionId}/cuotas`);
+    return apiClient.get<CuotasCollection>(`/api/pagos/inscripciones/${inscripcionId}/cuotas`);
   },
 
   // ============================================
@@ -74,7 +74,7 @@ export const pagosService = {
    * Devuelve la preferencia de MercadoPago con el link de pago
    */
   async createIntencionPago(data: IntencionPagoRequest): Promise<ApiResult<IntencionPagoResponse>> {
-    return hateoasClient.post<IntencionPagoResponse>('/api/pagos/intenciones', data);
+    return apiClient.post<IntencionPagoResponse>('/api/pagos/intencion', data);
   },
 
   /**

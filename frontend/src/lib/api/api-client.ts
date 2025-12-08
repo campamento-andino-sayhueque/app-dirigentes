@@ -69,12 +69,13 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 }
 
 /**
- * Cliente HATEOAS que descubre y navega la API dinámicamente
+ * Cliente API para descubrimiento dinámico
  */
-class HateoasClient {
+class ApiClient {
   private baseUrl: string;
   private apiRoot: ApiRootResponse | null = null;
   private linkCache: Map<string, string> = new Map();
+  private initPromise: Promise<ApiResult<ApiRootResponse>> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -134,8 +135,16 @@ class HateoasClient {
         const token = await this.getAuthToken();
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
+          // Debug only: Don't log full token in production, but helpful for dev
+          if (process.env.NODE_ENV === 'development') {
+             console.log(`[ApiClient] Sending request to ${url} with token (len=${token.length})`);
+          }
+        } else {
+          console.warn(`[ApiClient] WARNING: Request to ${url} requires auth but no token found`);
         }
       }
+
+      console.log(`[ApiClient] ${fetchOptions.method || 'GET'} ${this.resolveUrl(url)}`);
 
       const response = await fetch(this.resolveUrl(url), {
         ...fetchOptions,
@@ -216,23 +225,41 @@ class HateoasClient {
    * Obtiene la raíz de la API y cachea los links disponibles
    */
   async discoverApi(): Promise<ApiResult<ApiRootResponse>> {
-    const result = await this.get<ApiRootResponse>('/api');
-    
-    if (result.data) {
-      this.apiRoot = result.data;
-      
-      // Cachear links disponibles
-      if (result.links) {
-        Object.entries(result.links).forEach(([rel, link]) => {
-          const href = this.getLinkHref(link);
-          if (href) {
-            this.linkCache.set(rel, href);
-          }
-        });
-      }
+    // Si ya tenemos links, no necesitamos descubrir de nuevo inmediatamente
+    // (Podríamos añadir lógica de invalidación por tiempo aquí)
+    if (this.linkCache.size > 0 && this.apiRoot) {
+      return { data: this.apiRoot, links: this.apiRoot._links };
     }
-    
-    return result;
+
+    // Si ya hay una petición en vuelo, la retornamos
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = (async () => {
+      try {
+        const result = await this.get<ApiRootResponse>('/api');
+        
+        if (result.data) {
+          this.apiRoot = result.data;
+          
+          // Cachear links disponibles
+          if (result.links) {
+            Object.entries(result.links).forEach(([rel, link]) => {
+              const href = this.getLinkHref(link);
+              if (href) {
+                this.linkCache.set(rel, href);
+              }
+            });
+          }
+        }
+        return result;
+      } finally {
+        this.initPromise = null;
+      }
+    })();
+
+    return this.initPromise;
   }
 
   /**
@@ -253,6 +280,11 @@ class HateoasClient {
    * Navega a un link por su relación
    */
   async followLink<T>(rel: string, options?: RequestOptions): Promise<ApiResult<T>> {
+    // Asegurar que tenemos los links (lazy discovery)
+    if (!this.hasLink(rel)) {
+      await this.discoverApi();
+    }
+
     const href = this.getLink(rel);
     if (!href) {
       return { error: new ApiError(`Link '${rel}' no disponible`) };
@@ -291,6 +323,7 @@ class HateoasClient {
   clearCache(): void {
     this.apiRoot = null;
     this.linkCache.clear();
+    this.initPromise = null;
   }
 
   /**
@@ -333,7 +366,19 @@ class HateoasClient {
 }
 
 // Instancia singleton del cliente
-export const hateoasClient = new HateoasClient(API_BASE_URL);
+export const apiClient = new ApiClient(API_BASE_URL);
 
 // Re-exportar la URL base
 export { API_BASE_URL };
+
+/**
+ * Helper para lanzar error si el resultado de la API contiene uno
+ * Útil para react-query que espera que la función queryFn lance errores
+ */
+export async function fetchOrThrow<T>(promise: Promise<ApiResult<T>>): Promise<T> {
+  const result = await promise;
+  if (result.error) {
+    throw result.error;
+  }
+  return result.data as T;
+}

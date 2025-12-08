@@ -10,10 +10,10 @@
  * 
  * @example
  * ```typescript
- * import { hateoasClient, calendarioService, usuarioService } from '@/lib/api';
+ * import { apiClient, calendarioService, usuarioService } from '@/lib/api';
  * 
  * // Descubrir la API al iniciar
- * const { data: apiRoot } = await hateoasClient.discoverApi();
+ * const { data: apiRoot } = await apiClient.discoverApi();
  * 
  * // Usar los servicios específicos
  * const { data: eventos } = await calendarioService.listEventos();
@@ -23,14 +23,12 @@
 
 // Cliente HATEOAS base
 export { 
-  hateoasClient, 
   ApiError, 
   AuthenticationError, 
   ForbiddenError, 
-  NotFoundError,
-  API_BASE_URL 
-} from './hateoas-client';
-export type { ApiResult } from './hateoas-client';
+  NotFoundError
+} from './api-client';
+export * from './api-client';
 
 // Servicios por dominio
 export { usuarioService } from './usuario.service';
@@ -45,17 +43,17 @@ export * from './types';
 // Re-exports para compatibilidad con código existente
 // ============================================
 
-import { hateoasClient } from './hateoas-client';
+import { apiClient } from './api-client';
 import { usuarioService } from './usuario.service';
 import { HealthResponse } from './types';
 
 /**
  * Verifica si el backend está disponible
- * @deprecated Usar hateoasClient.discoverApi() para verificar conectividad
+ * @deprecated Usar apiClient.discoverApi() para verificar conectividad
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const result = await hateoasClient.get<HealthResponse>('/actuator/health', { requireAuth: false });
+    const result = await apiClient.get<HealthResponse>('/actuator/health', { requireAuth: false });
     return !result.error && result.data?.status === 'UP';
   } catch {
     return false;
@@ -64,10 +62,10 @@ export async function checkBackendHealth(): Promise<boolean> {
 
 /**
  * Ping público (sin autenticación)
- * @deprecated Usar hateoasClient.get('/api/public/ping', { requireAuth: false })
+ * @deprecated Usar apiClient.get('/api/public/ping', { requireAuth: false })
  */
 export async function publicPing(): Promise<string> {
-  const result = await hateoasClient.get<string>('/api/public/ping', { requireAuth: false });
+  const result = await apiClient.get<string>('/api/public/ping', { requireAuth: false });
   return result.data || '';
 }
 
