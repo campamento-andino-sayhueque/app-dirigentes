@@ -4,11 +4,18 @@
  * Proporcionan estado reactivo para operaciones de pagos.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pagosService } from '@/lib/api/pagos.service';
-import { InscripcionRequest, IntencionPagoRequest } from '@/lib/api/types';
-import { ApiResult, ApiError, fetchOrThrow } from '@/lib/api/api-client';
+import { 
+  InscripcionRequest, 
+  IntencionPagoRequest, 
+  MpPreferenceRequest,
+  CuotaModel,
+  PlanPagoModel,
+  MetodoPago 
+} from '@/lib/api/types';
+import { ApiError, fetchOrThrow } from '@/lib/api/api-client';
 
 /**
  * Hook para listar planes de pago disponibles
@@ -21,11 +28,35 @@ export function usePlanesPago() {
 
   const planes = useMemo(() => {
     if (!query.data) return [];
-    return pagosService.extractPlanes({ data: query.data } as any);
+    return pagosService.extractPlanes(query.data);
   }, [query.data]);
+
+  // Filtrar solo planes activos
+  const planesActivos = useMemo(() => {
+    return planes.filter(p => p.activo);
+  }, [planes]);
 
   return {
     planes,
+    planesActivos,
+    loading: query.isLoading,
+    error: query.error as ApiError,
+    refetch: query.refetch
+  };
+}
+
+/**
+ * Hook para obtener un plan específico
+ */
+export function usePlanPago(codigo: string | null) {
+  const query = useQuery({
+    queryKey: ['planPago', codigo],
+    queryFn: () => codigo ? fetchOrThrow(pagosService.getPlan(codigo)) : Promise.resolve(null),
+    enabled: !!codigo
+  });
+
+  return {
+    plan: query.data as PlanPagoModel | null,
     loading: query.isLoading,
     error: query.error as ApiError,
     refetch: query.refetch
@@ -46,10 +77,7 @@ export function useCuotasInscripcion(inscripcionId: number | null) {
 
   const cuotas = useMemo(() => {
     if (!query.data) return [];
-    // If it's empty data because inscripcionId is null, extractCuotas might fail if it expects data structure?
-    // extractCuotas checks for _embedded. 
-    // fetchOrThrow returns `result.data`. If result.data is undefined, it returns undefined.
-    return pagosService.extractCuotas({ data: query.data } as any);
+    return pagosService.extractCuotas(query.data);
   }, [query.data]);
 
   // Calcular estadísticas de las cuotas
@@ -58,7 +86,9 @@ export function useCuotasInscripcion(inscripcionId: number | null) {
     montoPagado: pagosService.calcularMontoPagado(cuotas),
     cuotasVencidas: pagosService.getCuotasVencidas(cuotas),
     cuotasPendientes: pagosService.getCuotasPendientes(cuotas),
-    proximaCuota: pagosService.getProximaCuota(cuotas)
+    proximaCuota: pagosService.getProximaCuota(cuotas),
+    totalCuotas: cuotas.length,
+    cuotasPagadas: cuotas.filter(c => c.estado === 'PAGADA').length
   }), [cuotas]);
 
   return {
@@ -74,8 +104,13 @@ export function useCuotasInscripcion(inscripcionId: number | null) {
  * Hook para crear una inscripción
  */
 export function useCrearInscripcion() {
+  const queryClient = useQueryClient();
+  
   const mutation = useMutation({
-    mutationFn: (data: InscripcionRequest) => fetchOrThrow(pagosService.createInscripcion(data))
+    mutationFn: (data: InscripcionRequest) => fetchOrThrow(pagosService.createInscripcion(data)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inscripciones'] });
+    }
   });
 
   return {
@@ -88,7 +123,7 @@ export function useCrearInscripcion() {
 }
 
 /**
- * Hook para crear una intención de pago (checkout MercadoPago)
+ * Hook para crear una intención de pago
  */
 export function useCrearIntencionPago() {
   const mutation = useMutation({
@@ -105,38 +140,53 @@ export function useCrearIntencionPago() {
 }
 
 /**
- * Hook para iniciar el flujo de pago de una cuota
- * Maneja la creación de la intención y redirección a MercadoPago
+ * Hook para crear preferencia de MercadoPago directamente
  */
-export function usePagarCuota() {
+export function useCrearPreferenciaMp() {
   const mutation = useMutation({
-    mutationFn: async ({ cuotaId, sandbox = false }: { cuotaId: number; sandbox?: boolean }) => {
-      // Here we don't strictly fetchOrThrow because we want the whole result potentially?
-      // No, we want to throw on error.
-      // pagosService.iniciarPagoCuota returns ApiResult<string>.
-      // fetchOrThrow guarantees data string.
-      const result = await pagosService.iniciarPagoCuota(cuotaId, sandbox);
-      
-      if (result.error) throw result.error;
-      
-      if (result.data) {
-        // Redirigir a MercadoPago
-        window.location.href = result.data;
-      }
-      
-      return result;
-    }
+    mutationFn: (data: MpPreferenceRequest) => fetchOrThrow(pagosService.createMpPreference(data))
   });
 
-  const pagarCuota = (cuotaId: number, sandbox = false) => {
-    return mutation.mutateAsync({ cuotaId, sandbox });
-  };
-
   return {
-    pagarCuota,
+    crearPreferencia: mutation.mutateAsync,
     loading: mutation.isPending,
     error: mutation.error as ApiError,
+    preferencia: mutation.data,
     reset: mutation.reset
+  };
+}
+
+/**
+ * Hook para iniciar el flujo de pago de cuotas
+ * Maneja la creación de la intención y redirección a MercadoPago
+ */
+export function usePagarCuotas() {
+  const { crearIntencion, loading, error, reset } = useCrearIntencionPago();
+
+  const pagarCuotas = useCallback(async (
+    inscripcionId: number, 
+    cuotaIds: number[], 
+    metodo: MetodoPago = 'MERCADOPAGO'
+  ) => {
+    const result = await crearIntencion({
+      idInscripcion: inscripcionId,
+      idsCuotas: cuotaIds,
+      metodo
+    });
+
+    // Si hay URL de redirección (MercadoPago), redirigir
+    if (result.urlRedireccion) {
+      window.location.href = result.urlRedireccion;
+    }
+
+    return result;
+  }, [crearIntencion]);
+
+  return {
+    pagarCuotas,
+    loading,
+    error,
+    reset
   };
 }
 
@@ -145,12 +195,13 @@ export function usePagarCuota() {
  */
 export function useFormatoMoneda() {
   return {
-    formatear: pagosService.formatMonto
+    formatear: pagosService.formatMonto,
+    mesEnumToSpanish: pagosService.mesEnumToSpanish
   };
 }
 
 /**
- * Hook combinado para gestión de pagos de un acampante
+ * Hook combinado para gestión de pagos de una inscripción
  */
 export function useGestionPagos(inscripcionId: number | null) {
   const { 
@@ -160,18 +211,26 @@ export function useGestionPagos(inscripcionId: number | null) {
     cuotasVencidas,
     cuotasPendientes,
     proximaCuota,
+    totalCuotas,
+    cuotasPagadas,
     loading: loadingCuotas, 
     error: errorCuotas,
     refetch 
   } = useCuotasInscripcion(inscripcionId);
 
   const { 
-    pagarCuota, 
+    pagarCuotas, 
     loading: loadingPago, 
     error: errorPago 
-  } = usePagarCuota();
+  } = usePagarCuotas();
 
-  const { formatear } = useFormatoMoneda();
+  const { formatear, mesEnumToSpanish } = useFormatoMoneda();
+
+  // Calcular progreso de pago
+  const progreso = useMemo(() => {
+    if (totalCuotas === 0) return 0;
+    return Math.round((cuotasPagadas / totalCuotas) * 100);
+  }, [cuotasPagadas, totalCuotas]);
 
   return {
     // Datos
@@ -181,6 +240,9 @@ export function useGestionPagos(inscripcionId: number | null) {
     cuotasVencidas,
     cuotasPendientes,
     proximaCuota,
+    totalCuotas,
+    cuotasPagadas,
+    progreso,
     
     // Estados
     loading: loadingCuotas || loadingPago,
@@ -194,15 +256,37 @@ export function useGestionPagos(inscripcionId: number | null) {
     
     // Operaciones
     refetch,
-    pagarCuota,
+    pagarCuotas: inscripcionId 
+      ? (cuotaIds: number[], metodo?: MetodoPago) => pagarCuotas(inscripcionId, cuotaIds, metodo)
+      : undefined,
     
     // Helpers
     formatMonto: formatear,
-    
-    // Estadísticas formateadas
-    montoPendienteFormateado: formatear(montoPendiente),
-    montoPagadoFormateado: formatear(montoPagado),
-    hayDeuda: montoPendiente > 0,
-    hayCuotasVencidas: cuotasVencidas.length > 0
+    mesEnumToSpanish,
+
+    // Helpers de cuotas
+    calcularMontoSeleccionado: (cuotaIds: number[]) => {
+      return cuotas
+        .filter(c => cuotaIds.includes(c.id))
+        .reduce((total, c) => total + c.monto, 0);
+    }
+  };
+}
+
+/**
+ * Hook para selección de cuotas a pagar
+ */
+export function useSeleccionCuotas(cuotas: CuotaModel[]) {
+  const cuotasPagables = useMemo(() => {
+    return cuotas.filter(c => c.estado !== 'PAGADA');
+  }, [cuotas]);
+
+  return {
+    cuotasPagables,
+    calcularMonto: (ids: number[]) => {
+      return cuotas
+        .filter(c => ids.includes(c.id))
+        .reduce((total, c) => total + c.monto, 0);
+    }
   };
 }

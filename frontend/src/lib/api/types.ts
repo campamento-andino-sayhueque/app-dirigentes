@@ -170,12 +170,41 @@ export interface CalendarioRootResponse extends HateoasResource {
 // Pagos Types
 // ============================================
 
+/**
+ * Mes del año (formato Java)
+ */
+export type MesEnum = 
+  | 'JANUARY' | 'FEBRUARY' | 'MARCH' | 'APRIL' 
+  | 'MAY' | 'JUNE' | 'JULY' | 'AUGUST' 
+  | 'SEPTEMBER' | 'OCTOBER' | 'NOVEMBER' | 'DECEMBER';
+
+/**
+ * Método de pago disponible
+ */
+export type MetodoPago = 'EFECTIVO' | 'MERCADOPAGO';
+
+/**
+ * Estado de una intención de pago
+ */
+export type EstadoIntencionPago = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'EXPIRADO' | 'REEMBOLSADO';
+
+/**
+ * Estado de una cuota
+ */
+export type EstadoCuota = 'PENDIENTE' | 'PAGADA' | 'VENCIDA';
+
+/**
+ * Plan de pago disponible para inscripción
+ */
 export interface PlanPagoModel extends HateoasResource {
-  id: number;
+  codigo: string;
   nombre: string;
-  descripcion?: string;
+  anio: number;
   montoTotal: number;
-  cantidadCuotas: number;
+  minCuotas: number;
+  maxCuotas: number;
+  mesInicio: MesEnum;
+  mesFin: MesEnum;
   activo: boolean;
 }
 
@@ -183,45 +212,86 @@ export interface PlanesCollection extends HateoasCollection<PlanPagoModel> {
   _embedded?: {
     planPagoModelList: PlanPagoModel[];
   };
+  content?: PlanPagoModel[];
 }
 
+/**
+ * Cuota de un plan de pago
+ */
 export interface CuotaModel extends HateoasResource {
   id: number;
-  numeroCuota: number;
-  monto: number;
+  secuencia: number;
   fechaVencimiento: string;
-  estado: 'PENDIENTE' | 'PAGADA' | 'VENCIDA';
-  fechaPago?: string;
+  monto: number;
+  estado: EstadoCuota;
 }
 
 export interface CuotasCollection extends HateoasCollection<CuotaModel> {
   _embedded?: {
     cuotaModelList: CuotaModel[];
   };
+  content?: CuotaModel[];
 }
 
+/**
+ * Request para crear una inscripción
+ */
 export interface InscripcionRequest {
-  planPagoId: number;
-  acampanteId: number;
+  idUsuario: string;
+  codigoPlan: string;
+  mesInicio: MesEnum;
+  cuotasDeseadas?: number; // 2-12
 }
 
+/**
+ * Respuesta al crear una inscripción
+ */
 export interface InscripcionResponse extends HateoasResource {
-  id: number;
-  planPagoId: number;
-  acampanteId: number;
-  fechaInscripcion: string;
-  estado: string;
+  idInscripcion: number;
+  cuotas: CuotaModel[];
 }
 
+/**
+ * Request para crear una intención de pago
+ */
 export interface IntencionPagoRequest {
-  cuotaId: number;
+  idInscripcion: number;
+  idsCuotas: number[];
+  metodo: MetodoPago;
 }
 
+/**
+ * Respuesta al crear una intención de pago
+ */
 export interface IntencionPagoResponse extends HateoasResource {
   id: number;
+  idInscripcion: number;
+  estado: EstadoIntencionPago;
+  urlRedireccion?: string;
+}
+
+/**
+ * Request para crear preferencia de MercadoPago (uso directo)
+ */
+export interface MpPreferenceRequest {
+  items: MpItemRequest[];
+  successUrl?: string;
+  failureUrl?: string;
+  pendingUrl?: string;
+}
+
+export interface MpItemRequest {
+  title: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+/**
+ * Respuesta de preferencia de MercadoPago
+ */
+export interface MpPreferenceResponse {
   preferenceId: string;
   initPoint: string;
-  sandboxInitPoint?: string;
 }
 
 export interface PagosRootResponse extends HateoasResource {

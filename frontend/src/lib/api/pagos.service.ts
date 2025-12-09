@@ -15,7 +15,10 @@ import {
   InscripcionRequest,
   InscripcionResponse,
   IntencionPagoRequest,
-  IntencionPagoResponse
+  IntencionPagoResponse,
+  MpPreferenceRequest,
+  MpPreferenceResponse,
+  MesEnum
 } from './types';
 
 /**
@@ -41,10 +44,10 @@ export const pagosService = {
   },
 
   /**
-   * Obtiene un plan de pago por ID
+   * Obtiene un plan de pago por código
    */
-  async getPlan(id: number): Promise<ApiResult<PlanPagoModel>> {
-    return apiClient.get<PlanPagoModel>(`/api/pagos/planes/${id}`);
+  async getPlan(codigo: string): Promise<ApiResult<PlanPagoModel>> {
+    return apiClient.get<PlanPagoModel>(`/api/pagos/planes/${codigo}`);
   },
 
   // ============================================
@@ -52,7 +55,7 @@ export const pagosService = {
   // ============================================
 
   /**
-   * Crea una nueva inscripción
+   * Crea una nueva inscripción a un plan de pago
    */
   async createInscripcion(data: InscripcionRequest): Promise<ApiResult<InscripcionResponse>> {
     return apiClient.post<InscripcionResponse>('/api/pagos/inscripciones', data);
@@ -66,39 +69,26 @@ export const pagosService = {
   },
 
   // ============================================
-  // Intenciones de Pago (MercadoPago)
+  // Intenciones de Pago
   // ============================================
 
   /**
-   * Crea una intención de pago para una cuota
-   * Devuelve la preferencia de MercadoPago con el link de pago
+   * Crea una intención de pago para cuotas seleccionadas
+   * Devuelve la URL de redirección si el método es MERCADOPAGO
    */
   async createIntencionPago(data: IntencionPagoRequest): Promise<ApiResult<IntencionPagoResponse>> {
-    return apiClient.post<IntencionPagoResponse>('/api/pagos/intencion', data);
+    return apiClient.post<IntencionPagoResponse>('/api/pagos/intenciones', data);
   },
 
+  // ============================================
+  // MercadoPago Direct (para pruebas o uso directo)
+  // ============================================
+
   /**
-   * Inicia el flujo de pago para una cuota específica
-   * Retorna la URL de checkout de MercadoPago
+   * Crea una preferencia de pago directamente en MercadoPago
    */
-  async iniciarPagoCuota(cuotaId: number, sandbox: boolean = false): Promise<ApiResult<string>> {
-    const result = await this.createIntencionPago({ cuotaId });
-    
-    if (result.error) {
-      return { error: result.error };
-    }
-
-    const checkoutUrl = sandbox 
-      ? result.data?.sandboxInitPoint 
-      : result.data?.initPoint;
-
-    if (!checkoutUrl) {
-      return { 
-        error: new Error('No se pudo obtener URL de pago') as never 
-      };
-    }
-
-    return { data: checkoutUrl };
+  async createMpPreference(data: MpPreferenceRequest): Promise<ApiResult<MpPreferenceResponse>> {
+    return apiClient.post<MpPreferenceResponse>('/api/mercadopago/checkout-pro/preferences', data);
   },
 
   // ============================================
@@ -109,14 +99,14 @@ export const pagosService = {
    * Extrae la lista de planes de una colección
    */
   extractPlanes(collection: PlanesCollection): PlanPagoModel[] {
-    return collection._embedded?.planPagoModelList || [];
+    return collection.content || collection._embedded?.planPagoModelList || [];
   },
 
   /**
    * Extrae la lista de cuotas de una colección
    */
   extractCuotas(collection: CuotasCollection): CuotaModel[] {
-    return collection._embedded?.cuotaModelList || [];
+    return collection.content || collection._embedded?.cuotaModelList || [];
   },
 
   /**
@@ -169,5 +159,65 @@ export const pagosService = {
       style: 'currency',
       currency: 'ARS'
     }).format(monto);
+  },
+
+  /**
+   * Convierte MesEnum a nombre en español
+   */
+  mesEnumToSpanish(mes: MesEnum): string {
+    const meses: Record<MesEnum, string> = {
+      'JANUARY': 'Enero',
+      'FEBRUARY': 'Febrero', 
+      'MARCH': 'Marzo',
+      'APRIL': 'Abril',
+      'MAY': 'Mayo',
+      'JUNE': 'Junio',
+      'JULY': 'Julio',
+      'AUGUST': 'Agosto',
+      'SEPTEMBER': 'Septiembre',
+      'OCTOBER': 'Octubre',
+      'NOVEMBER': 'Noviembre',
+      'DECEMBER': 'Diciembre'
+    };
+    return meses[mes] || mes;
+  },
+
+  /**
+   * Obtiene el número de mes (1-12) desde MesEnum
+   */
+  mesEnumToNumber(mes: MesEnum): number {
+    const meses: Record<MesEnum, number> = {
+      'JANUARY': 1, 'FEBRUARY': 2, 'MARCH': 3, 'APRIL': 4,
+      'MAY': 5, 'JUNE': 6, 'JULY': 7, 'AUGUST': 8,
+      'SEPTEMBER': 9, 'OCTOBER': 10, 'NOVEMBER': 11, 'DECEMBER': 12
+    };
+    return meses[mes];
+  },
+
+  /**
+   * Obtiene MesEnum desde número de mes (1-12)
+   */
+  numberToMesEnum(num: number): MesEnum {
+    const meses: MesEnum[] = [
+      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL',
+      'MAY', 'JUNE', 'JULY', 'AUGUST',
+      'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+    ];
+    return meses[num - 1] || 'JANUARY';
+  },
+
+  /**
+   * Obtiene los meses disponibles para inicio según el plan
+   */
+  getMesesDisponibles(plan: PlanPagoModel): MesEnum[] {
+    const inicio = this.mesEnumToNumber(plan.mesInicio);
+    const fin = this.mesEnumToNumber(plan.mesFin);
+    const meses: MesEnum[] = [];
+    
+    for (let i = inicio; i <= fin; i++) {
+      meses.push(this.numberToMesEnum(i));
+    }
+    
+    return meses;
   }
 };

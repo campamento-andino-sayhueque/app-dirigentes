@@ -1,149 +1,224 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useStore } from "@tanstack/react-store";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+// Hooks de pagos
+import { 
+  usePlanesPago, 
+  useCrearInscripcion,
+  useGestionPagos,
+  usePagarCuotas
+} from "@/hooks/usePagos";
+
+// Store
+import { pagosStore, pagosActions } from "@/stores/pagos.store";
+
+// Componentes
+import { 
+  PagosHeader, 
+  PlanesGrid, 
+  CuotasList, 
+  InscripcionModal,
+  ResumenPagos 
+} from "./components";
+
+// Tipos
+import { PlanPagoModel, MesEnum } from "@/lib/api/types";
+import { ApiError } from "@/lib/api/api-client";
 
 export default function PagosPage() {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  // Estado del store
+  const vistaActual = useStore(pagosStore, (state) => state.vistaActual);
+  const planSeleccionado = useStore(pagosStore, (state) => state.planSeleccionado);
+  const isInscripcionModalOpen = useStore(pagosStore, (state) => state.isInscripcionModalOpen);
+  const inscripcionActual = useStore(pagosStore, (state) => state.inscripcionActual);
+  const cuotasSeleccionadas = useStore(pagosStore, (state) => state.cuotasSeleccionadas);
+  const metodoPago = useStore(pagosStore, (state) => state.metodoPago);
 
-  const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-  const backendBase =
-    process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+  // Estado local para demo (en producción vendría del backend)
+  const [inscripcionId, setInscripcionId] = useState<number | null>(null);
 
-  // carga el SDK de Mercado Pago (v2) si hace falta
-  const loadMpSdk = () => {
-    return new Promise<void>((resolve, reject) => {
-      if (typeof window === "undefined") return reject("no-window");
-      if ((window as any).MercadoPago) return resolve();
-      const script = document.createElement("script");
-      script.src = "https://sdk.mercadopago.com/js/v2";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () =>
-        reject(new Error("Failed to load Mercado Pago SDK"));
-      document.head.appendChild(script);
-    });
-  };
+  // Hooks de API
+  const { planesActivos, loading: loadingPlanes } = usePlanesPago();
+  const { crearInscripcion, loading: loadingInscripcion } = useCrearInscripcion();
+  const { pagarCuotas, loading: loadingPago } = usePagarCuotas();
+  
+  // Hook de gestión de pagos (cuando hay una inscripción)
+  const {
+    cuotas,
+    montoPagado,
+    montoPendiente,
+    totalCuotas,
+    cuotasPagadas,
+    cuotasVencidas,
+    loading: loadingCuotas
+  } = useGestionPagos(inscripcionId);
 
-  const handleCreatePreference = async () => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const body = {
-        items: [{ title: "Donación CAS", quantity: 1, unitPrice: 100.0 }],
-        successUrl: `${window.location.origin}/pagos/success`,
-        failureUrl: `${window.location.origin}/pagos/failure`,
-        pendingUrl: `${window.location.origin}/pagos/pending`,
-      };
+  // Determinar si el usuario tiene inscripción
+  const tieneInscripcion = inscripcionId !== null;
 
-      const res = await fetch(
-        `${backendBase}/api/mercadopago/checkout-pro/preferences`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      );
+  // Handlers
+  const handleInscribirse = useCallback((plan: PlanPagoModel) => {
+    pagosActions.openInscripcionModal(plan);
+  }, []);
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const preferenceId = data.preferenceId || data.id;
-      const initPoint = data.initPoint || data.init_point;
-
-      if (!preferenceId && !initPoint) {
-        throw new Error("Respuesta inválida del backend");
-      }
-
-      // Si tenemos Public Key intentamos renderizar el botón con el SDK (mejor UX)
-      if (publicKey) {
-        try {
-          await loadMpSdk();
-          const mp = new (window as any).MercadoPago(publicKey, {
-            locale: "es-AR",
-          });
-          mp.checkout({
-            preference: { id: preferenceId },
-            render: {
-              container: "#mp-checkout-button",
-              label: "Pagar con Mercado Pago",
-            },
-          });
-          setMessage(
-            "Se creó la preferencia. Aparecerá el botón de pago abajo."
-          );
-        } catch (e) {
-          // fallback a redirección si SDK falla
-          if (initPoint) window.location.href = initPoint;
-          else throw e as Error;
-        }
-      } else {
-        // Sin Public Key, redirigimos al init_point
-        if (initPoint) {
-          window.location.href = initPoint;
-        } else {
-          setMessage("No hay Public Key ni init_point para completar el pago.");
-        }
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      // extraer mensaje de manera segura
-      const msg =
-        err && typeof err === "object" && "message" in err
-          ? (err as any).message
-          : String(err);
-      setMessage(msg || String(err));
-    } finally {
-      setLoading(false);
+  const handleConfirmarInscripcion = useCallback(async (mesInicio: MesEnum, cuotasDeseadas: number) => {
+    if (!planSeleccionado || !user) {
+      toast.error('Datos de inscripción incompletos');
+      return;
     }
-  };
 
-  useEffect(() => {
-    // limpia cualquier render anterior de SDK cuando se desmonta la página
-    return () => {
-      const container = document.getElementById("mp-checkout-button");
-      if (container) container.innerHTML = "";
-    };
+    try {
+      const result = await crearInscripcion({
+        idUsuario: user.uid,
+        codigoPlan: planSeleccionado.codigo,
+        mesInicio,
+        cuotasDeseadas
+      });
+
+      // Guardar la inscripción
+      setInscripcionId(result.idInscripcion);
+      pagosActions.setInscripcionActual(result.idInscripcion);
+      pagosActions.closeInscripcionModal();
+      pagosActions.setVistaActual('cuotas');
+      
+      toast.success('¡Inscripción exitosa! Ya puedes ver tus cuotas.');
+    } catch (error) {
+      console.error('Error al crear inscripción:', error);
+      const message = error instanceof ApiError ? error.message : 'Error al crear la inscripción';
+      toast.error(message);
+    }
+  }, [planSeleccionado, user, crearInscripcion]);
+
+  const handleToggleCuota = useCallback((cuotaId: number) => {
+    pagosActions.toggleCuotaSeleccionada(cuotaId);
+  }, []);
+
+  const handleSeleccionarTodas = useCallback(() => {
+    const pendientes = cuotas.filter(c => c.estado !== 'PAGADA').map(c => c.id);
+    pagosActions.seleccionarTodasLasCuotas(pendientes);
+  }, [cuotas]);
+
+  const handleLimpiarSeleccion = useCallback(() => {
+    pagosActions.limpiarSeleccion();
+  }, []);
+
+  const handlePagar = useCallback(async () => {
+    if (!inscripcionId || cuotasSeleccionadas.length === 0) {
+      toast.error('Selecciona al menos una cuota para pagar');
+      return;
+    }
+
+    try {
+      const result = await pagarCuotas(inscripcionId, cuotasSeleccionadas, metodoPago);
+      
+      // Si hay URL de redirección, el hook ya habrá redirigido
+      if (!result.urlRedireccion) {
+        toast.success('Intención de pago creada');
+      }
+    } catch (error) {
+      console.error('Error al procesar pago:', error);
+      const message = error instanceof ApiError ? error.message : 'Error al procesar el pago';
+      toast.error(message);
+    }
+  }, [inscripcionId, cuotasSeleccionadas, metodoPago, pagarCuotas]);
+
+  const handleChangeVista = useCallback((vista: 'planes' | 'cuotas' | 'historial') => {
+    pagosActions.setVistaActual(vista);
   }, []);
 
   return (
     <ProtectedRoute>
       <div className="min-h-full bg-gradient-to-br from-green-50 via-orange-50 to-red-50 pb-20 md:pb-8">
         <div className="container mx-auto px-4 py-8">
-          <header className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-              💳 <span className="text-[#FF6B35]">Pagos</span>
-            </h1>
-            <p className="text-gray-600">Estado de pagos y cuotas</p>
-          </header>
+          {/* Header con tabs */}
+          <PagosHeader
+            vistaActual={vistaActual}
+            onChangeVista={handleChangeVista}
+            tieneInscripcion={tieneInscripcion}
+          />
 
-          <main className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl p-8 shadow-md text-center">
-              <p className="text-gray-600 mb-4">
-                Pagar una donación de prueba de $100
-              </p>
+          <main className="max-w-6xl mx-auto">
+            {/* Vista de planes */}
+            {vistaActual === 'planes' && (
+              <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                    Planes de Pago Disponibles
+                  </h2>
+                  <p className="text-gray-600">
+                    Selecciona un plan para inscribirte y comenzar a pagar tus cuotas
+                  </p>
+                </div>
 
-              <div className="flex flex-col items-center gap-4">
-                <button
-                  onClick={handleCreatePreference}
-                  disabled={loading}
-                  className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-semibold py-2 px-6 rounded-lg disabled:opacity-60"
-                >
-                  {loading ? "Creando preferencia..." : "Pagar $100"}
-                </button>
-
-                {message && <p className="text-sm text-gray-700">{message}</p>}
-
-                {/* Aquí el SDK insertará el botón si es posible */}
-                <div id="mp-checkout-button" />
+                <PlanesGrid
+                  planes={planesActivos}
+                  loading={loadingPlanes}
+                  onInscribirse={handleInscribirse}
+                />
               </div>
-            </div>
+            )}
+
+            {/* Vista de cuotas */}
+            {vistaActual === 'cuotas' && tieneInscripcion && (
+              <div className="space-y-6">
+                {/* Resumen */}
+                <ResumenPagos
+                  montoPagado={montoPagado}
+                  montoPendiente={montoPendiente}
+                  totalCuotas={totalCuotas}
+                  cuotasPagadas={cuotasPagadas}
+                  cuotasVencidas={cuotasVencidas.length}
+                />
+
+                {/* Lista de cuotas */}
+                <CuotasList
+                  cuotas={cuotas}
+                  cuotasSeleccionadas={cuotasSeleccionadas}
+                  onToggleCuota={handleToggleCuota}
+                  onSeleccionarTodas={handleSeleccionarTodas}
+                  onLimpiarSeleccion={handleLimpiarSeleccion}
+                  onPagar={handlePagar}
+                  loading={loadingCuotas}
+                  loadingPago={loadingPago}
+                />
+              </div>
+            )}
+
+            {/* Vista de cuotas sin inscripción */}
+            {vistaActual === 'cuotas' && !tieneInscripcion && (
+              <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+                <div className="text-5xl mb-4">📋</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Aún no tienes inscripciones
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Inscríbete a un plan de pago para ver tus cuotas
+                </p>
+                <button
+                  onClick={() => handleChangeVista('planes')}
+                  className="text-[#FF6B35] hover:underline font-medium"
+                >
+                  Ver planes disponibles →
+                </button>
+              </div>
+            )}
           </main>
+
+          {/* Modal de inscripción */}
+          <InscripcionModal
+            open={isInscripcionModalOpen}
+            onClose={pagosActions.closeInscripcionModal}
+            plan={planSeleccionado}
+            onConfirmar={handleConfirmarInscripcion}
+            loading={loadingInscripcion}
+          />
         </div>
       </div>
     </ProtectedRoute>
