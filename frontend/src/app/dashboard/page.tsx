@@ -44,20 +44,6 @@ export default function DashboardPage() {
           {/* Tarjetas de acceso rápido - inspiradas en el diseño */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <Link
-              href="/sociales"
-              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-            >
-              <div className="text-4xl mb-2">🔥</div>
-              <h3 className="font-bold text-gray-800">Sociales</h3>
-            </Link>
-            <Link
-              href="/avisos"
-              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-            >
-              <div className="text-4xl mb-2">🔔</div>
-              <h3 className="font-bold text-gray-800">Notificaciones</h3>
-            </Link>
-            <Link
               href="/pagos"
               className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
             >

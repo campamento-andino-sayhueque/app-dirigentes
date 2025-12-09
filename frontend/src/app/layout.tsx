@@ -6,7 +6,6 @@ import QueryProvider from "@/lib/providers/QueryProvider";
 import MobileFooter from "@/components/MobileFooter";
 import MobileHeader from "@/components/MobileHeader";
 import RegisterServiceWorker from "@/components/RegisterServiceWorker";
-import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -56,34 +55,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full" suppressHydrationWarning>
+    <html lang="es" className="h-full">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         <AuthProvider>
           <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <RegisterServiceWorker />
-              <Toaster richColors position="top-center" />
-              {/* Estructura con Grid Layout - sin spacers huérfanos */}
-              <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
-                {/* Header Mobile - solo visible en móviles */}
-                <MobileHeader />
-                
-                {/* Header Desktop - parte del flujo del grid */}
-                <MobileFooter />
+            <RegisterServiceWorker />
+            <Toaster richColors position="top-center" />
+            {/* Estructura con Grid Layout - sin spacers huérfanos */}
+            <div className="h-full grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
+              {/* Header Mobile - solo visible en móviles */}
+              <MobileHeader />
+              
+              {/* Header Desktop - parte del flujo del grid */}
+              <MobileFooter />
 
-                {/* Contenido principal - ocupa el espacio restante (1fr) */}
-                <main className="overflow-auto">{children}</main>
+              {/* Contenido principal - ocupa el espacio restante (1fr) */}
+              <main className="overflow-auto">{children}</main>
 
-                {/* Footer Mobile se maneja dentro de MobileFooter con fixed positioning */}
-              </div>
-            </ThemeProvider>
+              {/* Footer Mobile se maneja dentro de MobileFooter con fixed positioning */}
+            </div>
           </QueryProvider>
         </AuthProvider>
       </body>

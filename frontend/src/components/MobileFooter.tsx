@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Home, Users, Calendar, CreditCard, Bell } from "lucide-react";
+import { Home, Calendar, CreditCard } from "lucide-react";
 import UserAvatar from "./UserAvatar";
 
 export default function MobileFooter() {
@@ -24,11 +24,8 @@ export default function MobileFooter() {
 
   const navItems = [
     { name: "Inicio", href: "/dashboard", icon: Home },
-    { name: "Sociales", href: "/sociales", icon: Users },
     { name: "Calendario", href: "/calendario", icon: Calendar, isCenter: true },
     { name: "Pagos", href: "/pagos", icon: CreditCard },
-    { name: "Avisos", href: "/avisos", icon: Bell },
-    { name: "Perfil", href: "/perfil", icon: Users }, // Added Profile link explicitly
   ];
 
   return (

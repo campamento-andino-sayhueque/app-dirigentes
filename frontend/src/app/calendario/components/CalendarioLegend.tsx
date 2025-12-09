@@ -93,7 +93,7 @@ export function CalendarioLegend({ tiposEvento }: CalendarioLegendProps) {
                 <span style={{ color: getEventColor(tipo.value) }}>
                   {getEventIcon(tipo.value)}
                 </span>
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-gray-700">
                   {tipo.label}
                 </span>
               </Badge>
