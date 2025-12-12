@@ -18,8 +18,10 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
   requireAuth?: boolean;
 }
 
+export type TokenProvider = () => Promise<string | null>;
+
 export class HttpClient {
-  constructor(protected baseUrl: string) {}
+  constructor(protected baseUrl: string, protected getToken?: TokenProvider) {}
 
   protected async getAuthToken(): Promise<string | null> {
     const user = auth.currentUser;
@@ -53,8 +55,8 @@ export class HttpClient {
         ...((fetchOptions.headers as Record<string, string>) || {}),
       };
 
-      if (requireAuth) {
-        const token = await this.getAuthToken();
+      if (this.getToken && options.requireAuth !== false) {
+        const token = await this.getToken();
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         } else {
