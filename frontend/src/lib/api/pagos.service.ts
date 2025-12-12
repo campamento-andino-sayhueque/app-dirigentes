@@ -5,7 +5,8 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { apiClient, ApiResult } from './api-client';
+import { apiClient } from './cas-client';
+import { ApiResult } from './http-client';
 import { 
   PagosRootResponse,
   PlanPagoModel, 
@@ -181,43 +182,4 @@ export const pagosService = {
     };
     return meses[mes] || mes;
   },
-
-  /**
-   * Obtiene el número de mes (1-12) desde MesEnum
-   */
-  mesEnumToNumber(mes: MesEnum): number {
-    const meses: Record<MesEnum, number> = {
-      'JANUARY': 1, 'FEBRUARY': 2, 'MARCH': 3, 'APRIL': 4,
-      'MAY': 5, 'JUNE': 6, 'JULY': 7, 'AUGUST': 8,
-      'SEPTEMBER': 9, 'OCTOBER': 10, 'NOVEMBER': 11, 'DECEMBER': 12
-    };
-    return meses[mes];
-  },
-
-  /**
-   * Obtiene MesEnum desde número de mes (1-12)
-   */
-  numberToMesEnum(num: number): MesEnum {
-    const meses: MesEnum[] = [
-      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL',
-      'MAY', 'JUNE', 'JULY', 'AUGUST',
-      'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
-    ];
-    return meses[num - 1] || 'JANUARY';
-  },
-
-  /**
-   * Obtiene los meses disponibles para inicio según el plan
-   */
-  getMesesDisponibles(plan: PlanPagoModel): MesEnum[] {
-    const inicio = this.mesEnumToNumber(plan.mesInicio);
-    const fin = this.mesEnumToNumber(plan.mesFin);
-    const meses: MesEnum[] = [];
-    
-    for (let i = inicio; i <= fin; i++) {
-      meses.push(this.numberToMesEnum(i));
-    }
-    
-    return meses;
-  }
 };

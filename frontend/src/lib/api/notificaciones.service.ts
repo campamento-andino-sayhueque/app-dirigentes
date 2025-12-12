@@ -4,7 +4,8 @@
  * Gestiona los tokens de dispositivo para push notifications.
  */
 
-import { apiClient, ApiResult } from './api-client';
+import { apiClient } from './cas-client';
+import { ApiResult } from './http-client';
 import { TokenDispositivoRequest } from './types';
 
 /**

@@ -5,14 +5,15 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { apiClient, AuthenticationError, ApiResult } from './api-client';
-import { 
-  UsuarioModel, 
-  UsuariosCollection, 
+import { apiClient } from './cas-client';
+import { ApiResult } from './http-client';
+import {
   ActualizarPerfilRequest,
-  UsuarioEstadisticas,
   RolesCollection,
-  RolModel
+  RolModel,
+  UsuarioEstadisticas,
+  UsuarioModel,
+  UsuariosCollection
 } from './types';
 
 /**
@@ -96,8 +97,7 @@ export const usuarioService = {
    * Asigna un rol a un usuario (solo admin)
    */
   async assignRole(userId: number, rol: string): Promise<ApiResult<UsuarioModel>> {
-    return apiClient.post<UsuarioModel>(`/api/usuarios/${userId}/roles/${rol}`);
-    return apiClient.post<UsuarioModel>(`/api/usuarios/${userId}/roles/${rol}`);
+    return apiClient.post<UsuarioModel>(`/api/usuarios/${userId}/roles/${rol}`, null);
   },
 
   /**

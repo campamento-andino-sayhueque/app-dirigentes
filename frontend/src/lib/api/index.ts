@@ -27,8 +27,8 @@ export {
   AuthenticationError, 
   ForbiddenError, 
   NotFoundError
-} from './api-client';
-export * from './api-client';
+} from './errors';
+export * from './cas-client';
 
 // Servicios por dominio
 export { usuarioService } from './usuario.service';
@@ -38,50 +38,3 @@ export { notificacionesService } from './notificaciones.service';
 
 // Tipos
 export * from './types';
-
-// ============================================
-// Re-exports para compatibilidad con código existente
-// ============================================
-
-import { apiClient } from './api-client';
-import { usuarioService } from './usuario.service';
-import { HealthResponse } from './types';
-
-/**
- * Verifica si el backend está disponible
- * @deprecated Usar apiClient.discoverApi() para verificar conectividad
- */
-export async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const result = await apiClient.get<HealthResponse>('/actuator/health', { requireAuth: false });
-    return !result.error && result.data?.status === 'UP';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Ping público (sin autenticación)
- * @deprecated Usar apiClient.get('/api/public/ping', { requireAuth: false })
- */
-export async function publicPing(): Promise<string> {
-  const result = await apiClient.get<string>('/api/public/ping', { requireAuth: false });
-  return result.data || '';
-}
-
-/**
- * Obtiene la información del usuario autenticado
- * @deprecated Usar usuarioService.getMe()
- */
-export async function getMe() {
-  return usuarioService.getMe();
-}
-
-/**
- * Valida el token actual contra el backend
- * @deprecated Usar usuarioService.getMe() y verificar si no hay error
- */
-export async function validateToken(): Promise<boolean> {
-  const result = await usuarioService.getMe();
-  return !result.error;
-}

@@ -23,7 +23,6 @@ export function InscripcionModal({
   onConfirmar,
   loading
 }: InscripcionModalProps) {
-  const [mesInicio, setMesInicio] = useState<MesEnum | null>(null);
   const [cuotasDeseadas, setCuotasDeseadas] = useState<number>(6);
 
   const formatMonto = pagosService.formatMonto;
@@ -32,19 +31,12 @@ export function InscripcionModal({
   // Reset cuando cambia el plan
   useEffect(() => {
     if (plan) {
-      setMesInicio(plan.mesInicio);
       // Usar el valor medio o el mínimo si no hay rango
       const cuotasDefault = plan.minCuotas === plan.maxCuotas 
         ? plan.minCuotas 
         : Math.min(Math.max(6, plan.minCuotas), plan.maxCuotas);
       setCuotasDeseadas(cuotasDefault);
     }
-  }, [plan]);
-
-  // Meses disponibles para este plan
-  const mesesDisponibles = useMemo(() => {
-    if (!plan) return [];
-    return pagosService.getMesesDisponibles(plan);
   }, [plan]);
 
   // Opciones de cantidad de cuotas
@@ -67,8 +59,9 @@ export function InscripcionModal({
   }, [plan, cuotasDeseadas]);
 
   const handleConfirmar = () => {
-    if (mesInicio) {
-      onConfirmar(mesInicio, cuotasDeseadas);
+    if (plan) {
+      // Usamos el mesInicio del plan directamente
+      onConfirmar(plan.mesInicio, cuotasDeseadas);
     }
   };
 
@@ -93,28 +86,8 @@ export function InscripcionModal({
             <p className="text-2xl font-bold text-[#FF6B35]">
               {formatMonto(plan.montoTotal)}
             </p>
-          </div>
-
-          {/* Selector de mes de inicio */}
-          <div className="space-y-2">
-            <Label htmlFor="mes-inicio">¿Cuándo querés empezar a pagar?</Label>
-            <Select
-              value={mesInicio || undefined}
-              onValueChange={(value) => setMesInicio(value as MesEnum)}
-            >
-              <SelectTrigger id="mes-inicio">
-                <SelectValue placeholder="Seleccioná el mes" />
-              </SelectTrigger>
-              <SelectContent>
-                {mesesDisponibles.map((mes) => (
-                  <SelectItem key={mes} value={mes}>
-                    {mesEnumToSpanish(mes)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500">
-              Período del plan: {mesEnumToSpanish(plan.mesInicio)} a {mesEnumToSpanish(plan.mesFin)}
+            <p className="text-xs text-gray-500 mt-2">
+              Período: {mesEnumToSpanish(plan.mesInicio)} a {mesEnumToSpanish(plan.mesFin)}
             </p>
           </div>
 
@@ -150,7 +123,7 @@ export function InscripcionModal({
                     Plan de {plan.minCuotas} cuotas fijas
                   </p>
                   <p className="text-sm text-blue-600">
-                    Este plan no permite modificar la cantidad de cuotas
+                    Este plan tiene una cantidad fija de cuotas
                   </p>
                 </div>
               </div>
@@ -166,11 +139,6 @@ export function InscripcionModal({
                 {formatMonto(montoPorCuota)}
               </span>
             </div>
-            {mesInicio && (
-              <p className="text-xs text-green-600 mt-2">
-                Primera cuota en {mesEnumToSpanish(mesInicio)}
-              </p>
-            )}
           </div>
         </div>
 
@@ -184,7 +152,7 @@ export function InscripcionModal({
           </Button>
           <Button
             onClick={handleConfirmar}
-            disabled={loading || !mesInicio}
+            disabled={loading}
             className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white"
           >
             {loading ? 'Procesando...' : 'Confirmar inscripción'}

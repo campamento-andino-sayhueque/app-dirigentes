@@ -4,11 +4,12 @@
  * Proporcionan estado reactivo para operaciones de usuarios.
  */
 
-import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchOrThrow } from '@/lib/api/api-client';
+import { ApiError } from '@/lib/api/errors';
+import { ActualizarPerfilRequest } from '@/lib/api/types';
 import { usuarioService } from '@/lib/api/usuario.service';
-import { UsuarioModel, ActualizarPerfilRequest } from '@/lib/api/types';
-import { ApiResult, ApiError, fetchOrThrow } from '@/lib/api/api-client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 /**
  * Hook para obtener el perfil del usuario actual
