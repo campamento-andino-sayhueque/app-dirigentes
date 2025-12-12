@@ -1,6 +1,6 @@
-import { ApiError } from "./errors";
-import { HttpClient, ApiResult, RequestOptions } from "./http-client";
-import { HateoasResource, HateoasLink, ApiRootResponse, HateoasCollection } from "./types";
+import { ApiError } from "../errors";
+import { HttpClient, ApiResult, RequestOptions } from "../http-client";
+import { HateoasResource, HateoasLink, ApiRootResponse, HateoasCollection } from "../types";
 
 export class HateoasClient<TRoot extends HateoasResource> extends HttpClient {
   protected apiRoot: TRoot | null = null;

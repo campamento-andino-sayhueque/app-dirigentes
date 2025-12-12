@@ -1,7 +1,7 @@
 // frontend/src/lib/api/cas-client.ts
 import { auth } from '@/lib/firebase';
-import { HateoasClient } from './hateoas-client';
-import { ApiRootResponse } from './types';
+import { HateoasClient } from '../hateoas-client';
+import { ApiRootResponse } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 

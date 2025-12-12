@@ -4,8 +4,8 @@ import {
   AuthenticationError,
   ForbiddenError,
   NotFoundError,
-} from "./errors";
-import { HateoasResource, HateoasLink } from "./types";
+} from "../errors";
+import { HateoasResource, HateoasLink } from "../types";
 
 export interface ApiResult<T> {
   data?: T;
