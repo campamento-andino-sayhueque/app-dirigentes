@@ -4,8 +4,7 @@
  * Proporcionan estado reactivo para operaciones de usuarios.
  */
 
-import { fetchOrThrow } from '@/lib/api/api-client';
-import { ApiError } from '@/lib/api/errors';
+import { fetchOrThrow, ApiError } from '@/lib/api';
 import { ActualizarPerfilRequest } from '@/lib/api/types';
 import { usuarioService } from '@/lib/api/usuario.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

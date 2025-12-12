@@ -4,7 +4,7 @@
  * Proporcionan estado reactivo para operaciones del calendario.
  */
 
-import { ApiError, fetchOrThrow } from '@/lib/api/api-client';
+import { ApiError, fetchOrThrow } from '@/lib/api';
 import { calendarioService, EventosFilter } from '@/lib/api/calendario.service';
 import { EventoCalendarioRequest } from '@/lib/api/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

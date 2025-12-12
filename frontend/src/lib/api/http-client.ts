@@ -130,3 +130,17 @@ export class HttpClient {
     return this.request<T>(url, { ...options, method: "DELETE" });
   }
 }
+
+/**
+ * Helper para usar con TanStack Query
+ * Desempaqueta el ApiResult y lanza error si existe
+ */
+export async function fetchOrThrow<T>(promise: Promise<ApiResult<T>>): Promise<T> {
+  const result = await promise;
+  if (result.error) {
+    throw result.error;
+  }
+  // Si no hay data pero tampoco error, devolvemos undefined as T
+  // (algunos endpoints pueden no devolver contenido, e.g. 204)
+  return result.data as T;
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMe, UserInfo } from "@/lib/api";
+import { usuarioService, UsuarioModel } from "@/lib/api";
 import { ArrowLeft, Mail, Shield, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -16,7 +16,7 @@ function getDiceBearAvatar(seed: string, style: string = "adventurer"): string {
 export default function PerfilPage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const [backendUser, setBackendUser] = useState<UserInfo | null>(null);
+  const [backendUser, setBackendUser] = useState<UsuarioModel | null>(null);
   const [backendLoading, setBackendLoading] = useState(true);
   const [backendError, setBackendError] = useState<string | null>(null);
 
@@ -34,11 +34,11 @@ export default function PerfilPage() {
       
       try {
         setBackendLoading(true);
-        const response = await getMe();
+        const response = await usuarioService.getMe();
         if (response.data) {
           setBackendUser(response.data);
         } else if (response.error) {
-          setBackendError(response.error);
+          setBackendError(response.error.message || "Error desconocido");
         }
       } catch (error) {
         console.error("Error obteniendo datos del backend:", error);
@@ -144,9 +144,9 @@ export default function PerfilPage() {
             </div>
           ) : backendUser ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
                 <span className="text-gray-600">Nombre</span>
-                <span className="text-gray-800 font-medium">{backendUser.name}</span>
+                <span className="text-gray-800 font-medium">{backendUser.nombreMostrar}</span>
               </div>
               
               <div className="flex items-center justify-between py-3 border-b border-gray-100">
@@ -169,7 +169,7 @@ export default function PerfilPage() {
               
               <div className="flex items-center justify-between py-3">
                 <span className="text-gray-600">Email verificado (backend)</span>
-                {backendUser.emailVerified ? (
+                {backendUser.emailVerificado ? (
                   <CheckCircle className="w-5 h-5 text-green-500" />
                 ) : (
                   <XCircle className="w-5 h-5 text-red-500" />

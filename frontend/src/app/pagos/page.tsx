@@ -28,7 +28,7 @@ import {
 
 // Tipos
 import { PlanPagoModel, MesEnum } from "@/lib/api/types";
-import { ApiError } from "@/lib/api/api-client";
+import { ApiError } from "@/lib/api";
 
 export default function PagosPage() {
   const { user } = useAuth();

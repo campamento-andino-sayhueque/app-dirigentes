@@ -9,12 +9,14 @@ import { apiClient } from './cas-client';
 import { ApiResult } from './http-client';
 import {
   ActualizarPerfilRequest,
-  RolesCollection,
-  RolModel,
   UsuarioEstadisticas,
   UsuarioModel,
   UsuariosCollection
-} from './types';
+} from './types/usuario';
+import {
+  RolesCollection,
+  RolModel,
+} from './types/roles';
 
 /**
  * Servicio de usuarios

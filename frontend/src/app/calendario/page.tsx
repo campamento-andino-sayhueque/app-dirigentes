@@ -12,7 +12,7 @@ import { CalendarioLegend } from "./components/CalendarioLegend";
 import { EventoDetailModal } from "./components/EventoDetailModal";
 import { EventoFormModal } from "./components/EventoFormModal";
 import { calendarioStore, calendarioActions } from "@/stores/calendario.store";
-import { ApiError } from "@/lib/api/api-client";
+import { ApiError } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function CalendarioPage() {

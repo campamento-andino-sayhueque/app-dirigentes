@@ -1,5 +1,5 @@
 import { casColors } from "@/lib/colors";
-import { ApiError } from "@/lib/api/api-client";
+import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 

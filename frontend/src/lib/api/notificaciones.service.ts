@@ -6,7 +6,7 @@
 
 import { apiClient } from './cas-client';
 import { ApiResult } from './http-client';
-import { TokenDispositivoRequest } from './types';
+import { TokenDispositivoRequest } from './types/notificaciones';
 
 /**
  * Servicio de notificaciones

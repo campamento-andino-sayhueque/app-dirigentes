@@ -15,7 +15,7 @@ import {
   PlanPagoModel,
   MetodoPago 
 } from '@/lib/api/types';
-import { ApiError, fetchOrThrow } from '@/lib/api/api-client';
+import { ApiError, fetchOrThrow } from '@/lib/api';
 
 /**
  * Hook para listar planes de pago disponibles

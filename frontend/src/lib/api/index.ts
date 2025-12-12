@@ -28,6 +28,7 @@ export {
   ForbiddenError, 
   NotFoundError
 } from './errors';
+export { fetchOrThrow } from './http-client';
 export * from './cas-client';
 
 // Servicios por dominio

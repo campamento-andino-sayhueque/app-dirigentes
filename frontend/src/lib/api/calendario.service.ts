@@ -14,7 +14,7 @@ import {
   EventoCalendarioRequest,
   TipoEventoModel,
   TiposEventoCollection,
-} from "./types";
+} from "./types/calendario";
 
 /**
  * Filtros para listar eventos

@@ -20,7 +20,7 @@ import {
   MpPreferenceRequest,
   MpPreferenceResponse,
   MesEnum
-} from './types';
+} from './types/pagos';
 
 /**
  * Servicio de pagos
