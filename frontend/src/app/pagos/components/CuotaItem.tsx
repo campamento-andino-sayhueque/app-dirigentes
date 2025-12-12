@@ -1,8 +1,8 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { CuotaModel } from "@/lib/api/types";
-import { pagosService } from "@/lib/api/pagos.service";
+import { CuotaModel } from "@/lib/api/types/pagos";
+import { pagosService } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface CuotaItemProps {

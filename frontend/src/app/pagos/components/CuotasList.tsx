@@ -1,9 +1,9 @@
 "use client";
 
-import { CuotaModel } from "@/lib/api/types";
+import { CuotaModel } from "@/lib/api/types/pagos";
 import { CuotaItem } from "./CuotaItem";
 import { Button } from "@/components/ui/button";
-import { pagosService } from "@/lib/api/pagos.service";
+import { pagosService } from "@/lib/api";
 
 interface CuotasListProps {
   cuotas: CuotaModel[];

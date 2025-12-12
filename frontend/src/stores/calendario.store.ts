@@ -1,6 +1,6 @@
+import { CalendarEventFormatted } from "@/lib/api";
+import { EventoCalendarioRequest } from '@/lib/api/types/calendario';
 import { Store } from '@tanstack/store';
-import { CalendarEventFormatted } from '@/lib/api/calendario.service';
-import { EventoCalendarioRequest } from '@/lib/api/types';
 
 interface CalendarioState {
   selectedEvent: CalendarEventFormatted | null;

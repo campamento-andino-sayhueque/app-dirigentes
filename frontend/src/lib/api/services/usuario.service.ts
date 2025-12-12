@@ -5,18 +5,18 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { apiClient } from './cas-client';
-import { ApiResult } from './http-client';
+import { apiClient } from '../cas-client';
+import { ApiResult } from '../http-client';
 import {
   ActualizarPerfilRequest,
   UsuarioEstadisticas,
   UsuarioModel,
   UsuariosCollection
-} from './types/usuario';
+} from '../types/usuario';
 import {
   RolesCollection,
   RolModel,
-} from './types/roles';
+} from '../types/roles';
 
 /**
  * Servicio de usuarios

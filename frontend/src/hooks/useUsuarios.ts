@@ -5,8 +5,8 @@
  */
 
 import { fetchOrThrow, ApiError } from '@/lib/api';
-import { ActualizarPerfilRequest } from '@/lib/api/types';
-import { usuarioService } from '@/lib/api/usuario.service';
+import { ActualizarPerfilRequest } from '@/lib/api/types/usuario';
+import { usuarioService } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 

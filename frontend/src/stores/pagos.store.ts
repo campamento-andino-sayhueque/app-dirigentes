@@ -1,5 +1,5 @@
+import { MesEnum, MetodoPago, PlanPagoModel } from '@/lib/api/types/pagos';
 import { Store } from '@tanstack/store';
-import { PlanPagoModel, CuotaModel, MetodoPago, MesEnum } from '@/lib/api/types';
 
 /**
  * Estado de la UI de pagos

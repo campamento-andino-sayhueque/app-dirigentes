@@ -8,7 +8,8 @@ import { es } from "date-fns/locale/es";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { casColors } from "@/lib/colors";
 import { getEventColor } from "./helpers";
-import { CalendarEventFormatted } from "@/lib/api/calendario.service";
+import { calendarioService } from "@/lib/api";
+import { CalendarEventFormatted } from "@/lib/api";
 
 // Configurar localizador de date-fns
 const locales = {

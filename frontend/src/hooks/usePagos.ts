@@ -6,7 +6,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { pagosService } from '@/lib/api/pagos.service';
+import { pagosService } from '@/lib/api';
 import { 
   InscripcionRequest, 
   IntencionPagoRequest, 
@@ -14,7 +14,7 @@ import {
   CuotaModel,
   PlanPagoModel,
   MetodoPago 
-} from '@/lib/api/types';
+} from '@/lib/api/types/pagos';
 import { ApiError, fetchOrThrow } from '@/lib/api';
 
 /**

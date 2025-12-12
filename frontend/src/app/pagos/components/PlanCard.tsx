@@ -3,8 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlanPagoModel } from "@/lib/api/types";
-import { pagosService } from "@/lib/api/pagos.service";
+import { PlanPagoModel } from "@/lib/api/types/pagos";
+import { pagosService } from "@/lib/api";
 
 interface PlanCardProps {
   plan: PlanPagoModel;

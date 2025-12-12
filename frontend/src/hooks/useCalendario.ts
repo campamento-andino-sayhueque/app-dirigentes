@@ -5,8 +5,8 @@
  */
 
 import { ApiError, fetchOrThrow } from '@/lib/api';
-import { calendarioService, EventosFilter } from '@/lib/api/calendario.service';
-import { EventoCalendarioRequest } from '@/lib/api/types';
+import { calendarioService, EventosFilter } from '@/lib/api';
+import { EventoCalendarioRequest } from '@/lib/api/types/calendario';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 

@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlanPagoModel, MesEnum } from "@/lib/api/types";
-import { pagosService } from "@/lib/api/pagos.service";
+import { PlanPagoModel, MesEnum } from "@/lib/api/types/pagos";
+import { pagosService } from "@/lib/api";
 
 interface InscripcionModalProps {
   open: boolean;

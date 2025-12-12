@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { pagosService } from "@/lib/api/pagos.service";
+import { pagosService } from '@/lib/api';
 
 interface ResumenPagosProps {
   montoPagado: number;

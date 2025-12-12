@@ -5,8 +5,8 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { apiClient } from './cas-client';
-import { ApiResult } from './http-client';
+import { apiClient } from '../cas-client';
+import { ApiResult } from '../http-client';
 import { 
   PagosRootResponse,
   PlanPagoModel, 
@@ -20,7 +20,7 @@ import {
   MpPreferenceRequest,
   MpPreferenceResponse,
   MesEnum
-} from './types/pagos';
+} from '../types/pagos';
 
 /**
  * Servicio de pagos

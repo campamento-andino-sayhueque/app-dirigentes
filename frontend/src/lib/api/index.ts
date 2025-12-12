@@ -32,10 +32,14 @@ export { fetchOrThrow } from './http-client';
 export * from './cas-client';
 
 // Servicios por dominio
-export { usuarioService } from './usuario.service';
-export { calendarioService, type EventosFilter } from './calendario.service';
-export { pagosService } from './pagos.service';
-export { notificacionesService } from './notificaciones.service';
+export { usuarioService } from './services/usuario.service';
+export { 
+  calendarioService, 
+  type EventosFilter,
+  type CalendarEventFormatted 
+} from './services/calendario.service';
+export { pagosService } from './services/pagos.service';
+export { notificacionesService } from './services/notificaciones.service';
 
 // Tipos
 export * from './types';

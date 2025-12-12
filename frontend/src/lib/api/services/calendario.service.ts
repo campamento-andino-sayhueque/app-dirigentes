@@ -5,8 +5,8 @@
  * usando el cliente HATEOAS para descubrimiento dinámico.
  */
 
-import { apiClient } from "./cas-client";
-import { ApiResult } from "./http-client";
+import { apiClient } from "../cas-client";
+import { ApiResult } from "../http-client";
 import {
   CalendarioRootResponse,
   EventoCalendarioModel,
@@ -14,7 +14,7 @@ import {
   EventoCalendarioRequest,
   TipoEventoModel,
   TiposEventoCollection,
-} from "./types/calendario";
+} from "../types/calendario";
 
 /**
  * Filtros para listar eventos
